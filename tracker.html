@@ -6784,10 +6784,10 @@ function fbRealSchedule(){
 function fbRealSetStatus(s){
   var el = document.getElementById("fbStatus");
   if(!el) return;
-  if(s === "syncing") { el.textContent = "sync"; el.style.color = "var(--yellow)"; }
-  else if(s === "ok") { el.textContent = "sync"; el.style.color = "var(--green)"; }
-  else if(s === "offline") { el.textContent = "wifi_off"; el.style.color = "var(--muted)"; }
-  else                { el.textContent = "sync_problem"; el.style.color = "var(--red)"; }
+  if(s === "syncing") { el.textContent = "🔄"; el.style.color = "var(--yellow)"; }
+  else if(s === "ok") { el.textContent = "☁️"; el.style.color = "var(--green)"; }
+  else if(s === "offline") { el.textContent = "📵"; el.style.color = "var(--muted)"; }
+  else                { el.textContent = "⚠️"; el.style.color = "var(--red)"; }
 }
 
 function showSyncCode(){
@@ -6857,7 +6857,7 @@ if(!getFbUserId()) setTimeout(fbEnsureUserId, 1500);
 
 setInterval(fbPull, 30000);
 
-// Sahifa yopilganda — sync XHR bilan darhol push (sendBeacon POST yuboradi, Firebase PUT kutadi)
+// Desktop: sahifa yopilganda sync XHR
 window.addEventListener("beforeunload", function(){
   clearTimeout(fbSyncTimer);
   fbSyncTimer = null;
@@ -6865,10 +6865,28 @@ window.addEventListener("beforeunload", function(){
   if(uid && navigator.onLine){
     try {
       var xhr = new XMLHttpRequest();
-      xhr.open("PUT", FB_DB + "/users/" + uid + ".json", false); // false = synchronous
+      xhr.open("PUT", FB_DB + "/users/" + uid + ".json", false);
       xhr.setRequestHeader("Content-Type", "application/json");
       xhr.send(JSON.stringify(fbGetData()));
     } catch(e){}
+  }
+});
+
+// Mobil: sahifa background ga ketganda darhol push (iOS/Android uchun)
+document.addEventListener("visibilitychange", function(){
+  if(document.visibilityState === "hidden"){
+    var uid = getFbUserId();
+    if(uid && navigator.onLine && (fbPendingSync || fbSyncTimer)){
+      clearTimeout(fbSyncTimer);
+      fbSyncTimer = null;
+      // Async push — mobil brauzer biroz vaqt beradi
+      fetch(FB_DB + "/users/" + uid + ".json", {
+        method: "PUT",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(fbGetData()),
+        keepalive: true
+      }).catch(function(){});
+    }
   }
 });
 
