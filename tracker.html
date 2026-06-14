@@ -5276,7 +5276,7 @@ You are now an English Speaking Coach. Rules:
 
   let reply = null;
   try{
-    const resp = await fetch('/netlify/functions/chat', {
+    const resp = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -5655,7 +5655,7 @@ async function sendAiMessage(forcedText){
       }
       return m;
     });
-    const resp = await fetch("/netlify/functions/chat", {
+    const resp = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
