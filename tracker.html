@@ -936,6 +936,142 @@
   .idle-shuffle-btn { width: 100%; padding: 12px; background: transparent; border: 1.5px dashed var(--border2); border-radius: var(--r-md); color: var(--muted); font-family: var(--font-body); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-top: 4px; }
   .idle-shuffle-btn:hover { border-color: var(--yellow); color: var(--yellow); }
 
+  /* ── MOBILE RESPONSIVE ── */
+  @media (max-width: 480px) {
+    /* Asosiy padding */
+    .page { padding: 66px 12px 76px; }
+
+    /* Navbar */
+    .navbar { height: 54px; padding: 0 12px; }
+    .navbar-title { font-size: 15px; }
+    .nav-btn { padding: 5px 8px; font-size: 13px; }
+
+    /* Bottom nav */
+    .bottom-nav { height: 60px; }
+    .bnav-btn { font-size: 10px !important; padding: 6px 2px; }
+    .bnav-btn span { font-size: 20px !important; }
+
+    /* Cards */
+    .card { padding: 14px; border-radius: var(--r-md); }
+
+    /* Stats row — 3 ustun kichik ekranda ham */
+    .stats-row { gap: 6px; }
+    .stat-box { padding: 10px 6px; border-radius: var(--r-sm); }
+    .stat-num { font-size: 24px !important; }
+    .stat-label { font-size: 9px !important; letter-spacing: 0.3px; }
+
+    /* Task tabs */
+    .tasks-header { gap: 4px; }
+    .task-tab { padding: 8px 4px; border-radius: 10px; }
+    .task-tab .tab-count { font-size: 16px; }
+    .task-tab .tab-label { font-size: 9px; letter-spacing: 0; }
+    .task-add-btn { padding: 7px 10px; font-size: 13px; }
+
+    /* Task items */
+    .task-item { padding: 10px 10px; gap: 8px; }
+    .task-name { font-size: 14px !important; }
+    .task-badge { font-size: 10px !important; padding: 2px 5px !important; }
+
+    /* Daily progress */
+    .daily-progress { padding: 12px; }
+    .dp-stats { grid-template-columns: repeat(4,1fr); gap: 4px; }
+    .dp-num { font-size: 20px !important; }
+    .dp-lbl { font-size: 9px !important; }
+
+    /* Habits */
+    .habit { padding: 10px 12px; }
+    .h-name { font-size: 14px !important; }
+    .h-desc { font-size: 12px !important; }
+    .h-icon { font-size: 18px; width: 28px; }
+    .btn-y, .btn-n { width: 32px; height: 32px; font-size: 13px; }
+
+    /* Income */
+    .income-amount { font-size: 32px !important; }
+    .income-btns { gap: 6px; }
+    .income-btn { padding: 8px; font-size: 13px; }
+
+    /* Pomodoro */
+    .pomo-box { padding: 18px; }
+    .pomo-ring { width: 130px; height: 130px; }
+    .pomo-ring-num { font-size: 28px; }
+    .pomo-btn { padding: 10px 18px; font-size: 13px; }
+
+    /* Goals / Why */
+    .why { padding: 16px; }
+    .goal-smart-key { width: 55px; font-size: 12px; }
+    .goal-smart-val { font-size: 13px; }
+
+    /* Modal */
+    .modal { padding: 18px; border-radius: var(--r-lg); }
+    .modal-title { font-size: 15px !important; }
+    .modal-input { padding: 9px 10px; font-size: 14px; }
+    .modal-btn { padding: 11px; font-size: 13px; }
+
+    /* Drawer */
+    .drawer { width: 260px; }
+    .drawer-item { font-size: 13px !important; padding: 9px 10px; }
+
+    /* Habit streaks */
+    .habit-streak-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .habit-streak-card { padding: 10px; }
+    .habit-streak-num { font-size: 26px !important; }
+
+    /* Task stats */
+    .task-stats-grid { gap: 6px; }
+    .task-stat-box { padding: 10px 6px; }
+    .task-stat-num { font-size: 22px !important; }
+    .task-stat-lbl { font-size: 9px !important; }
+
+    /* Calendar */
+    .cal-wrap { padding: 12px; }
+    .cal-view-day { min-height: 50px; padding: 4px; }
+    .cal-view-task { font-size: 8px; }
+    .cal-day-num { font-size: 12px; }
+
+    /* YT stats */
+    .yt-stats-grid { gap: 6px; }
+    .yt-stat { padding: 10px; }
+    .yt-stat-num { font-size: 18px !important; }
+    .yt-stat-label { font-size: 9px !important; }
+    .yt-channel-name { font-size: 15px; }
+
+    /* Page title */
+    .page-title { font-size: 22px !important; }
+    .page-subtitle { font-size: 13px; margin-bottom: 14px; }
+
+    /* Sleep */
+    .sleep-time-val { font-size: 24px; }
+    .sleep-streak-num { font-size: 38px; }
+
+    /* Motivation mini */
+    .motivation-mini { padding: 12px 14px; }
+    .motivation-mini-text { font-size: 13px; }
+
+    /* Focus banner */
+    .focus-banner { padding: 12px 14px; }
+
+    /* Section gaps */
+    .section-gap { margin-bottom: 12px; }
+
+    /* AI modal — to'liq ekran */
+    #aiModal .modal-overlay { padding: 0; align-items: flex-end; }
+    #aiModal .modal { border-radius: var(--r-xl) var(--r-xl) 0 0; max-width: 100%; max-height: 92vh; display: flex; flex-direction: column; }
+
+    /* Sync modal */
+    #syncModal > div { width: calc(100% - 32px); max-width: 340px; padding: 20px; }
+  }
+
+  /* Kichik telefon (375px va pastroq) */
+  @media (max-width: 375px) {
+    .task-tab .tab-label { display: none; }
+    .task-tab .tab-count { font-size: 14px; }
+    .stats-row { gap: 4px; }
+    .stat-num { font-size: 20px !important; }
+    .dp-stats { gap: 2px; }
+    .dp-num { font-size: 17px !important; }
+    .bnav-btn { font-size: 9px !important; }
+  }
+
 </style>
 </head>
 <body id="body">
