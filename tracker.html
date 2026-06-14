@@ -3203,6 +3203,7 @@ function saveTop3(idx,val){
 }
 function setFrogTask(id){
   localStorage.setItem("frogTaskId",id);
+  fbSchedule();
   renderTasks();
 }
 function toggleTask(id){
@@ -6671,7 +6672,13 @@ function fbGetData(){
     karmaData: karmaData,
     namozData: namozData,
     xarajatData: xarajatData,
-    zanjirData: zanjirData
+    zanjirData: zanjirData,
+    frogTaskId: localStorage.getItem("frogTaskId") || "",
+    mindsetList: JSON.parse(localStorage.getItem("mindsetList") || "[]"),
+    sleepTargetBed: localStorage.getItem("sleepTargetBed") || "",
+    sleepTargetWake: localStorage.getItem("sleepTargetWake") || "",
+    notifyTime: localStorage.getItem("notifyTime") || "",
+    reviewDay: localStorage.getItem("reviewDay") || ""
   };
 }
 
@@ -6730,6 +6737,12 @@ function fbApplyData(data){
   if(data.namozData)    { namozData = data.namozData; localStorage.setItem("namozData", JSON.stringify(namozData)); }
   if(data.xarajatData)  { xarajatData = data.xarajatData; localStorage.setItem("xarajatData", JSON.stringify(xarajatData)); }
   if(data.zanjirData)   { zanjirData = data.zanjirData; localStorage.setItem("zanjirData", JSON.stringify(zanjirData)); }
+  if(data.frogTaskId)   localStorage.setItem("frogTaskId", data.frogTaskId);
+  if(data.mindsetList)  localStorage.setItem("mindsetList", JSON.stringify(data.mindsetList));
+  if(data.sleepTargetBed)  localStorage.setItem("sleepTargetBed", data.sleepTargetBed);
+  if(data.sleepTargetWake) localStorage.setItem("sleepTargetWake", data.sleepTargetWake);
+  if(data.notifyTime)   localStorage.setItem("notifyTime", data.notifyTime);
+  if(data.reviewDay)    localStorage.setItem("reviewDay", data.reviewDay);
 
   if(!Array.isArray(tasks)) tasks = [];
   if(!Array.isArray(goals)) goals = [];
