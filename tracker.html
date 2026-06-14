@@ -6710,12 +6710,12 @@ function fbPush(){
 
 function fbApplyData(data){
   if(!data) return;
-  // Lokal ma'lumot Firebase dan yangi bo'lsa — qabul qilmaymiz
-  var localTs = parseInt(localStorage.getItem("fbSavedAt") || "0");
+  // Remote va local ni solishtirish: remote yangroq bo'lsa qabul qilamiz
+  var localTs  = parseInt(localStorage.getItem("fbSavedAt") || "0");
   var remoteTs = data._savedAt || 0;
-  if(localTs > remoteTs + 2000) {
-    // Lokal ma'lumot 2 soniyadan ko'proq yangiroq — Firebase ni eski deb hisoblaymiz
-    // Lekin Firebase ga push qilamiz (ma'lumotni yuborib qo'yamiz)
+  // Agar lokal 5 soniyadan ko'proq yangi bo'lsa — remote ni qabul qilmaymiz
+  // Lekin push qilamiz (Firebase ni yangilaymiz)
+  if(localTs > remoteTs + 5000){
     fbRealSchedule();
     return;
   }
@@ -6737,7 +6737,7 @@ function fbApplyData(data){
   if(data.namozData)    { namozData = data.namozData; localStorage.setItem("namozData", JSON.stringify(namozData)); }
   if(data.xarajatData)  { xarajatData = data.xarajatData; localStorage.setItem("xarajatData", JSON.stringify(xarajatData)); }
   if(data.zanjirData)   { zanjirData = data.zanjirData; localStorage.setItem("zanjirData", JSON.stringify(zanjirData)); }
-  if(data.frogTaskId)   localStorage.setItem("frogTaskId", data.frogTaskId);
+  if(data.frogTaskId !== undefined) localStorage.setItem("frogTaskId", data.frogTaskId);
   if(data.mindsetList)  localStorage.setItem("mindsetList", JSON.stringify(data.mindsetList));
   if(data.sleepTargetBed)  localStorage.setItem("sleepTargetBed", data.sleepTargetBed);
   if(data.sleepTargetWake) localStorage.setItem("sleepTargetWake", data.sleepTargetWake);
@@ -6868,7 +6868,7 @@ window.addEventListener("offline", function(){
 // Birinchi ochilishda userId yo'q bo'lsa — o'rnatish
 if(!getFbUserId()) setTimeout(fbEnsureUserId, 1500);
 
-setInterval(fbPull, 30000);
+setInterval(fbPull, 10000);
 
 // Desktop: sahifa yopilganda sync XHR
 window.addEventListener("beforeunload", function(){
