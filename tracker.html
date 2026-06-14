@@ -2562,6 +2562,7 @@ function saveTaskPlan(){
   const weekly  = parseInt(document.getElementById("planWeekly")?.value)||0;
   const monthly = parseInt(document.getElementById("planMonthly")?.value)||0;
   localStorage.setItem("taskPlan", JSON.stringify({daily, weekly, monthly}));
+  fbMarkDirty(["taskPlan"]); fbSchedule();
   playSound("save");
   renderTaskReports();
 }
@@ -2950,6 +2951,7 @@ function saveIncome(){
   if(incomeMode==="add"){incomeData.entries.push({date:today,amount:amt,note:document.getElementById("incomeNote").value.trim()});}
   else{incomeData.goal=amt;}
   localStorage.setItem("incomeData",JSON.stringify(incomeData));
+  fbMarkDirty(["incomeData"]); fbSchedule();
   closeModal("incomeModal"); renderIncome();
 }
 
@@ -2984,7 +2986,7 @@ function deleteCustomHabit(id){
 }
 
 function openQuoteModal(){document.getElementById("quoteInput").value=whyQuote;openModal("quoteModal");}
-function saveQuote(){whyQuote=document.getElementById("quoteInput").value.trim()||DEFAULT_QUOTE;localStorage.setItem("whyQuote",whyQuote);playSound("save");closeModal("quoteModal");renderGoals();}
+function saveQuote(){whyQuote=document.getElementById("quoteInput").value.trim()||DEFAULT_QUOTE;localStorage.setItem("whyQuote",whyQuote);fbMarkDirty(["whyQuote"]);fbSchedule();playSound("save");closeModal("quoteModal");renderGoals();}
 
 function openAddGoal(){editingGoalIdx=-1;document.getElementById("goalModalTitle").textContent="➕ Yangi maqsad";document.getElementById("goalIcon").value="";document.getElementById("goalText").value="";openModal("goalModal");}
 function openEditGoal(i){editingGoalIdx=i;document.getElementById("goalModalTitle").textContent="✏️ Maqsadni tahrirlash";document.getElementById("goalIcon").value=goals[i].icon;document.getElementById("goalText").value=goals[i].text;openModal("goalModal");}
@@ -3009,6 +3011,7 @@ function saveNotifyTime(){
   localStorage.setItem("notifyTime",t);
   const rd=document.getElementById("reviewDaySelect");
   if(rd)localStorage.setItem("reviewDay",rd.value);
+  fbMarkDirty(["notifyTime","reviewDay"]); fbSchedule();
   scheduleNotify();
   closeModal("notifyModal");
 }
@@ -3203,6 +3206,7 @@ function saveTop3(idx,val){
   const top3=JSON.parse(localStorage.getItem("top3tasks")||"[\"\",\"\",\"\"]");
   top3[idx]=val;
   localStorage.setItem("top3tasks",JSON.stringify(top3));
+  fbMarkDirty(["top3tasks"]); fbSchedule();
 }
 function setFrogTask(id){
   // isFrog ni tasks ichiga saqlash — tasks sync bilan birga sinxronlanadi
@@ -3702,6 +3706,7 @@ function saveWeekly(weekKey){
   days.forEach(d=>{const el=document.getElementById("wd_"+d);if(el)data[d]=el.value;});
   weeklyData[weekKey]=data;
   localStorage.setItem("weeklyData",JSON.stringify(weeklyData));
+  fbMarkDirty(["weeklyData"]); fbSchedule();
   const btn=document.querySelector(".weekly-save-btn");
   if(btn){btn.textContent="✓ Saqlandi!";setTimeout(()=>{btn.textContent="💾 Saqlash";},1500);}
 }
@@ -3742,6 +3747,7 @@ function saveDecomposeSteps(goal){
   const newSteps=steps.map((_,i)=>{const el=document.getElementById("dstep_"+i);return el?el.value:"";});
   decompSteps[goal]=newSteps;
   localStorage.setItem("decompSteps",JSON.stringify(decompSteps));
+  fbMarkDirty(["decompSteps"]); fbSchedule();
   const btn=event.target;
   btn.textContent="✓ Saqlandi!"; setTimeout(()=>{btn.textContent="💾 Saqlash";},1500);
 }
@@ -4214,7 +4220,7 @@ function renderReview(){
 
 function saveReviewDay(d){
   localStorage.setItem("reviewDay",d);
-  // Update notify schedule
+  fbMarkDirty(["reviewDay"]); fbSchedule();
   scheduleNotify();
 }
 function toggleResolved(pi){
@@ -4415,6 +4421,7 @@ function addWeekGoal(){
   if(!weeklyData[weekKey2].goals)weeklyData[weekKey2].goals=[];
   weeklyData[weekKey2].goals.push(inp.value.trim());
   localStorage.setItem("weeklyData",JSON.stringify(weeklyData));
+  fbMarkDirty(["weeklyData"]); fbSchedule();
   inp.value="";
   renderMyGoals();
 }
@@ -4425,6 +4432,7 @@ function deleteWeekGoal(idx){
   if(!weeklyData[weekKey2]||!weeklyData[weekKey2].goals)return;
   weeklyData[weekKey2].goals.splice(idx,1);
   localStorage.setItem("weeklyData",JSON.stringify(weeklyData));
+  fbMarkDirty(["weeklyData"]); fbSchedule();
   renderMyGoals();
 }
 
@@ -4687,6 +4695,7 @@ function saveSleepTargets(){
   const wake = document.getElementById("sleepTargetWakeInput")?.value;
   if(bed) localStorage.setItem("sleepTargetBed", bed);
   if(wake) localStorage.setItem("sleepTargetWake", wake);
+  fbMarkDirty(["sleepTargetBed","sleepTargetWake"]); fbSchedule();
   renderSleep();
 }
 
@@ -5458,7 +5467,7 @@ if(mindsetList.length === 0){
   } catch(e){}
 }
 
-function saveMindset(){ localStorage.setItem("mindsetList", JSON.stringify(mindsetList)); }
+function saveMindset(){ localStorage.setItem("mindsetList", JSON.stringify(mindsetList)); fbMarkDirty(["mindsetList"]); fbSchedule(); }
 
 function getMindsetForUstoz(){ return mindsetList; }
 
