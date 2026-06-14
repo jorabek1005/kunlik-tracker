@@ -6710,15 +6710,6 @@ function fbPush(){
 
 function fbApplyData(data){
   if(!data) return;
-  // Remote va local ni solishtirish: remote yangroq bo'lsa qabul qilamiz
-  var localTs  = parseInt(localStorage.getItem("fbSavedAt") || "0");
-  var remoteTs = data._savedAt || 0;
-  // Agar lokal 5 soniyadan ko'proq yangi bo'lsa — remote ni qabul qilmaymiz
-  // Lekin push qilamiz (Firebase ni yangilaymiz)
-  if(localTs > remoteTs + 5000){
-    fbRealSchedule();
-    return;
-  }
   if(data.tasks)        { tasks = data.tasks; localStorage.setItem("tasks", JSON.stringify(tasks)); }
   if(data.trackerState) { state = data.trackerState; localStorage.setItem("trackerState", JSON.stringify(state)); }
   if(data.goals)        { goals = data.goals; localStorage.setItem("goals", JSON.stringify(goals)); }
@@ -6786,7 +6777,6 @@ function fbPull(){
 }
 
 function fbRealSchedule(){
-  localStorage.setItem("fbSavedAt", Date.now().toString());
   clearTimeout(fbSyncTimer);
   fbSyncTimer = setTimeout(function(){
     fbSyncTimer = null;
