@@ -3202,9 +3202,10 @@ function saveTop3(idx,val){
   localStorage.setItem("top3tasks",JSON.stringify(top3));
 }
 function setFrogTask(id){
-  localStorage.setItem("frogTaskId",id);
-  fbSchedule();
-  renderTasks();
+  // isFrog ni tasks ichiga saqlash — tasks sync bilan birga sinxronlanadi
+  tasks.forEach(function(t){ t.isFrog = (t.id === id && !!id); });
+  localStorage.setItem("frogTaskId", id);
+  saveTasks();
 }
 function toggleTask(id){
   const t=tasks.find(x=>x.id===id);
@@ -3455,8 +3456,11 @@ function renderTasks(){
     const overdue = tasks.filter(t=>!t.done&&t.due&&t.due<todayStr).length;
     const highLeft = tasks.filter(t=>!t.done&&t.priority==="high"&&(!t.due||t.due<=todayStr)).length;
 
-    var frogId = localStorage.getItem("frogTaskId");
-    var frogTask = frogId ? tasks.find(t=>t.id===frogId&&!t.done) : null;
+    var frogTask = tasks.find(t=>t.isFrog&&!t.done) || null;
+    if(!frogTask){
+      var frogId = localStorage.getItem("frogTaskId");
+      frogTask = frogId ? tasks.find(t=>t.id===frogId&&!t.done) : null;
+    }
     if(!frogTask) frogTask = tasks.filter(t=>!t.done&&t.priority==="high"&&(!t.due||t.due<=todayStr))[0] || null;
 
     const mitTasks = tasks.filter(t=>t.isMIT&&!t.done&&(!t.due||t.due<=todayStr)).slice(0,3);
