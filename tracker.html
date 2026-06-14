@@ -2314,6 +2314,8 @@ function renderToday(){
 
 function renderHabits(){
   const el=document.getElementById("habitsBox"); if(!el)return;
+  if(!state[today]) state[today]={habits:{},note:""};
+  if(!state[today].habits) state[today].habits={};
   el.innerHTML=getHABITS().map(h=>{
     const val=state[today].habits[h.id];
     const cls="habit"+(val===true?" done":val===false?" fail":"");
