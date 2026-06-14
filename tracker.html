@@ -6653,6 +6653,7 @@ function fbEnsureUserId(){
 
 function fbGetData(){
   return {
+    _savedAt: Date.now(),
     tasks: tasks,
     trackerState: state,
     goals: goals,
@@ -6702,6 +6703,15 @@ function fbPush(){
 
 function fbApplyData(data){
   if(!data) return;
+  // Lokal ma'lumot Firebase dan yangi bo'lsa — qabul qilmaymiz
+  var localTs = parseInt(localStorage.getItem("fbSavedAt") || "0");
+  var remoteTs = data._savedAt || 0;
+  if(localTs > remoteTs + 2000) {
+    // Lokal ma'lumot 2 soniyadan ko'proq yangiroq — Firebase ni eski deb hisoblaymiz
+    // Lekin Firebase ga push qilamiz (ma'lumotni yuborib qo'yamiz)
+    fbRealSchedule();
+    return;
+  }
   if(data.tasks)        { tasks = data.tasks; localStorage.setItem("tasks", JSON.stringify(tasks)); }
   if(data.trackerState) { state = data.trackerState; localStorage.setItem("trackerState", JSON.stringify(state)); }
   if(data.goals)        { goals = data.goals; localStorage.setItem("goals", JSON.stringify(goals)); }
@@ -6763,8 +6773,12 @@ function fbPull(){
 }
 
 function fbRealSchedule(){
+  localStorage.setItem("fbSavedAt", Date.now().toString());
   clearTimeout(fbSyncTimer);
-  fbSyncTimer = setTimeout(fbPush, 3000);
+  fbSyncTimer = setTimeout(function(){
+    fbSyncTimer = null;
+    fbPush();
+  }, 1500);
 }
 
 function fbRealSetStatus(s){
@@ -6843,17 +6857,18 @@ if(!getFbUserId()) setTimeout(fbEnsureUserId, 1500);
 
 setInterval(fbPull, 30000);
 
-// Sahifa yopilganda — pending bo'lsa darhol push
+// Sahifa yopilganda — sync XHR bilan darhol push (sendBeacon POST yuboradi, Firebase PUT kutadi)
 window.addEventListener("beforeunload", function(){
-  if(fbPendingSync || fbSyncTimer){
-    clearTimeout(fbSyncTimer);
-    var uid = getFbUserId();
-    if(uid && navigator.onLine){
-      navigator.sendBeacon(
-        FB_DB + "/users/" + uid + ".json",
-        JSON.stringify(fbGetData())
-      );
-    }
+  clearTimeout(fbSyncTimer);
+  fbSyncTimer = null;
+  var uid = getFbUserId();
+  if(uid && navigator.onLine){
+    try {
+      var xhr = new XMLHttpRequest();
+      xhr.open("PUT", FB_DB + "/users/" + uid + ".json", false); // false = synchronous
+      xhr.setRequestHeader("Content-Type", "application/json");
+      xhr.send(JSON.stringify(fbGetData()));
+    } catch(e){}
   }
 });
 
@@ -6888,6 +6903,7 @@ if('serviceWorker' in navigator){
 const _origSaveTasks = saveTasks;
 function saveTasks(){
   localStorage.setItem("tasks", JSON.stringify(tasks));
+  localStorage.setItem("fbSavedAt", Date.now().toString());
   fbSchedule();
   swSaveTasksToDB();
 }
