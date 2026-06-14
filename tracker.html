@@ -3316,13 +3316,13 @@ function renderTasks(){
       med:  {dot:"#ffd166", bg:"rgba(255,209,102,0.32)", border:"rgba(255,209,102,0.75)", tag:"rgba(255,209,102,0.42)", tagTxt:"#ffd166",  label:"Important"},
       low:  {dot:"#00c87a", bg:"rgba(0,245,160,0.28)",   border:"rgba(0,245,160,0.72)",   tag:"rgba(0,245,160,0.4)",   tagTxt:"#00f5a0",  label:"Normal"},
     } : {
-      high: {dot:"#e03050", bg:"rgba(224,48,80,0.18)",   border:"rgba(224,48,80,0.70)",    tag:"rgba(224,48,80,0.22)",   tagTxt:"#c0203a",  label:"Critical"},
-      med:  {dot:"#c47d00", bg:"rgba(196,125,0,0.16)",   border:"rgba(196,125,0,0.65)",   tag:"rgba(196,125,0,0.2)",    tagTxt:"#a86b00",  label:"Important"},
-      low:  {dot:"#008a58", bg:"rgba(0,138,88,0.15)",    border:"rgba(0,138,88,0.65)",    tag:"rgba(0,138,88,0.2)",     tagTxt:"#006e45",  label:"Normal"},
+      high: {dot:"#e03050", bg:"rgba(224,48,80,0.10)",   border:"rgba(224,48,80,0.55)",    tag:"rgba(224,48,80,0.15)",   tagTxt:"#b01030",  label:"Critical"},
+      med:  {dot:"#b87000", bg:"rgba(196,125,0,0.10)",   border:"rgba(196,125,0,0.50)",   tag:"rgba(196,125,0,0.15)",   tagTxt:"#8a5200",  label:"Important"},
+      low:  {dot:"#007a48", bg:"rgba(0,138,88,0.10)",    border:"rgba(0,138,88,0.50)",    tag:"rgba(0,138,88,0.15)",    tagTxt:"#005a30",  label:"Normal"},
     };
     const mitCfg = isDark
       ? {dot:"#a78bfa", bg:"rgba(167,139,250,0.35)", border:"rgba(167,139,250,0.80)", tag:"rgba(167,139,250,0.45)", tagTxt:"#c4b0ff", label:"MIT"}
-      : {dot:"#6d28d9", bg:"rgba(109,40,217,0.16)",  border:"rgba(109,40,217,0.65)", tag:"rgba(109,40,217,0.2)",  tagTxt:"#5b21b6", label:"MIT"};
+      : {dot:"#6d28d9", bg:"rgba(109,40,217,0.10)",  border:"rgba(109,40,217,0.50)", tag:"rgba(109,40,217,0.15)", tagTxt:"#4a10b6", label:"MIT"};
     const pr = t.isMIT ? mitCfg : (prCfg[t.priority] || prCfg.low);
 
     const subtasksTotal = t.subtasks ? t.subtasks.length : 0;
@@ -3356,9 +3356,11 @@ function renderTasks(){
 
     // Chips (kichik meta)
     const chips = [];
-    if(t.recurring) chips.push(`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(77,159,255,0.1);color:var(--blue)">🔄 ${t.recurring}</span>`);
-    if(t.project)   chips.push(`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(167,139,250,0.1);color:var(--purple)"># ${t.project}</span>`);
-    if(subtasksTotal) chips.push(`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(255,255,255,0.06);color:var(--muted)">${subtasksDone}/${subtasksTotal}</span>`);
+    const prLabels = {high:"🔴 Muhim", med:"🟡 O'rta", low:"🟢 Oddiy"};
+    if(!t.isMIT && t.priority) chips.push(`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;background:${pr.tag};color:${pr.tagTxt}">${prLabels[t.priority]||t.priority}</span>`);
+    if(t.recurring) chips.push(`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(77,159,255,0.12);color:var(--blue)">🔄 ${t.recurring}</span>`);
+    if(t.project)   chips.push(`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(167,139,250,0.12);color:var(--purple)"># ${t.project}</span>`);
+    if(subtasksTotal) chips.push(`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(128,128,128,0.12);color:var(--muted)">${subtasksDone}/${subtasksTotal} subtask</span>`);
 
     const chipsHtml = `${dueDateHtml}${chips.length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">${chips.join("")}</div>`:""}`;
 
@@ -3402,7 +3404,7 @@ function renderTasks(){
           <!-- Kontent -->
           <div style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:6px">
-              ${t.isMIT?`<span style="font-size:11px;padding:1px 6px;border-radius:10px;background:${pr.tag};color:${pr.tagTxt};font-weight:800;letter-spacing:0.3px">★ MIT</span>`:""}
+              ${t.isMIT?`<span style="font-size:11px;padding:1px 6px;border-radius:10px;background:rgba(255,209,102,0.25);color:#ffd166;border:1px solid rgba(255,209,102,0.5);font-weight:800;letter-spacing:0.3px">★ MIT</span>`:""}
               <div style="font-size:14px;font-weight:700;color:var(--text);line-height:1.3;word-break:break-word">${t.name}</div>
             </div>
             ${chipsHtml}
@@ -3514,7 +3516,7 @@ function renderTasks(){
               box-shadow:0 3px 10px rgba(255,34,68,0.35)">🐸</div>
             <div style="flex:1;min-width:0">
               <div style="font-size:9px;color:#ff6680;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:2px">⚡ EAT THE FROG</div>
-              <div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+              <div style="font-size:13px;font-weight:700;color:var(--text);word-break:break-word;line-height:1.4">
                 ${frogTask ? frogTask.name : '<span style="color:var(--muted);font-weight:500">Vazifa tanlanmagan →</span>'}
               </div>
             </div>
@@ -3550,7 +3552,7 @@ function renderTasks(){
                 <div style="font-size:9px;color:#00c87a;font-weight:800;text-transform:uppercase;letter-spacing:1.5px">ZANJIR</div>
                 <div style="padding:1px 7px;border-radius:20px;background:rgba(255,209,102,0.15);border:1px solid rgba(255,209,102,0.3);font-size:10px;font-weight:800;color:var(--yellow)">🔥 ${zStreak} kun</div>
               </div>
-              <div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+              <div style="font-size:13px;font-weight:700;color:var(--text);word-break:break-word;line-height:1.4">
                 ${zanjirData.task || '<span style="color:var(--muted);font-weight:500">Vazifa o\'rnatilmagan</span>'}
               </div>
             </div>
