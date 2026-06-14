@@ -15,12 +15,12 @@
 
   /* ── DESIGN TOKENS ── */
   :root {
-    --bg: #0e0e1a;
-    --bg2: #14142a;
-    --card: rgba(24,24,42,0.88);
-    --card2: rgba(30,30,52,0.92);
-    --border: #1e1e35;
-    --border2: #252540;
+    --bg: #0f1035;
+    --bg2: #151840;
+    --card: rgba(25,28,65,0.92);
+    --card2: rgba(32,36,80,0.96);
+    --border: #2e3270;
+    --border2: #3a3f88;
     --green: #00f5a0;
     --green2: #00c87a;
     --red: #ff4466;
@@ -65,13 +65,18 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    background: var(--bg);
+    background: linear-gradient(160deg, #1e1560 0%, #2a0f72 30%, #112060 65%, #0d1a55 100%);
+    background-attachment: fixed;
     color: var(--text);
     font-family: var(--font-body);
     font-size: 15px;
     min-height: 100vh;
     transition: background 0.3s, color 0.3s;
     -webkit-font-smoothing: antialiased;
+  }
+  body.light {
+    background: linear-gradient(135deg, #eef1ff 0%, #e4ecff 40%, #f0e8ff 100%);
+    background-attachment: fixed;
   }
 
   /* Workspace atmosphere background */
@@ -80,9 +85,9 @@
     position: fixed;
     inset: 0;
     background:
-      radial-gradient(ellipse 90% 60% at 10% -10%, rgba(0,245,160,0.18) 0%, transparent 50%),
-      radial-gradient(ellipse 80% 60% at 90% 110%, rgba(77,159,255,0.16) 0%, transparent 50%),
-      radial-gradient(ellipse 60% 50% at 50% 50%, rgba(167,139,250,0.08) 0%, transparent 65%);
+      radial-gradient(ellipse 70% 50% at 0% 0%, rgba(0,245,160,0.30) 0%, transparent 55%),
+      radial-gradient(ellipse 60% 50% at 100% 100%, rgba(77,159,255,0.28) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 40% at 50% 45%, rgba(200,120,255,0.18) 0%, transparent 60%);
     pointer-events: none;
     z-index: 0;
   }
@@ -91,9 +96,9 @@
     position: fixed;
     inset: 0;
     background-image:
-      linear-gradient(rgba(0,245,160,0.06) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,245,160,0.06) 1px, transparent 1px);
-    background-size: 48px 48px;
+      linear-gradient(rgba(150,120,255,0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(150,120,255,0.07) 1px, transparent 1px);
+    background-size: 44px 44px;
     pointer-events: none;
     z-index: 0;
   }
