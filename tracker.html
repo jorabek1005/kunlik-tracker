@@ -6244,7 +6244,7 @@ function renderNamoz(){
       +'<div style="font-size:24px">'+p.icon+'</div>'
       +'<div style="flex:1">'
       +'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:15px;font-weight:800;color:'+(done?"#00e87a":isNext?"#ffd166":"#ffffff")+'">'+p.name+'</div>'
-      +'<div style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:2px;font-weight:600">'+p.ar+' · <span style="color:'+(done?"#00e87a":isNext?"#ffd166":"#a0c4ff")+'">'+time+'</span></div>'
+      +'<div style="font-size:12px;color:rgba(255,255,255,0.9);margin-top:2px;font-weight:700">'+p.ar+' · <span style="color:'+(done?"#00e87a":isNext?"#ffd166":"#7dd3fc")+';font-size:13px;font-weight:800">'+time+'</span></div>'
       +'</div>'
       +(isNext?'<div style="font-size:10px;background:rgba(255,209,102,0.2);color:#ffd166;border:1px solid rgba(255,209,102,0.5);border-radius:20px;padding:3px 8px;font-weight:800">Keyingi</div>':"")
       +'<div style="width:28px;height:28px;border-radius:50%;border:2px solid '+(done?"#00e87a":"rgba(255,255,255,0.35)")+';'
@@ -6269,7 +6269,7 @@ function renderNamoz(){
   if(next && !next.tomorrow){
     var h = Math.floor(next.minsLeft/60);
     var m = next.minsLeft%60;
-    countdownHtml = '<span style="color:#ffd166">'+(h>0?h+"s ":"")+m+"d"+'</span> qoldi';
+    countdownHtml = '<span style="color:#ffd166">'+(h>0?h+" soat ":"")+m+" daqiqa"+'</span> qoldi';
   } else if(next && next.tomorrow){
     countdownHtml = 'Ertangi Bomdodgacha';
   }
@@ -6286,7 +6286,7 @@ function renderNamoz(){
     +'<div style="text-align:center"><div style="font-family:\'Space Grotesk\',sans-serif;font-size:28px;font-weight:800;color:#ffd166">'+doneCnt+'/5</div><div style="font-size:11px;color:rgba(255,255,255,0.8);font-weight:600">Bugun</div></div>'
     +'<div style="text-align:center"><div style="font-family:\'Space Grotesk\',sans-serif;font-size:28px;font-weight:800;color:#c4b0ff">'+(namozData.bestStreak||0)+'</div><div style="font-size:11px;color:rgba(255,255,255,0.8);font-weight:600">Eng yaxshi</div></div>'
     +'</div>'
-    +(next?'<div style="font-size:13px;color:rgba(255,255,255,0.85);text-align:center;font-weight:600">⏳ Keyingi namoz: <b style="color:#ffd166">'+next.prayer.name+'</b> ('+next.prayer.time+') — '+countdownHtml+'</div>':"")
+    +(next?'<div style="font-size:13px;color:rgba(255,255,255,0.85);text-align:center;font-weight:600">⏳ Keyingi namoz: <b style="color:#ffd166">'+next.prayer.name+'</b> ('+next.time+') — '+countdownHtml+'</div>':"")
     +'</div>'
 
     // Prayer list
