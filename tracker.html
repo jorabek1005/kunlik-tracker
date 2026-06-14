@@ -2334,6 +2334,7 @@ function setHabit(id,val){
     }
   }
   localStorage.setItem("trackerState",JSON.stringify(state));
+  fbMarkDirty(["trackerState"]);
   fbSchedule();
   renderHabits();
   renderToday();
@@ -2343,6 +2344,7 @@ function saveDay(){
   state[today].note=document.getElementById("noteBox").value;
   state[today].saved=true;
   localStorage.setItem("trackerState",JSON.stringify(state));
+  fbMarkDirty(["trackerState"]);
   fbSchedule();
   playSound("save");
   const msg=document.getElementById("savedMsg");
@@ -2975,6 +2977,7 @@ function deleteCustomHabit(id){
   localStorage.setItem("customHabits",JSON.stringify(customHabits));
   Object.keys(state).forEach(k=>{if(state[k].habits)delete state[k].habits[id];});
   localStorage.setItem("trackerState",JSON.stringify(state));
+  fbMarkDirty(["trackerState","customHabits"]);
   fbSchedule();
   renderHabits();
   renderHabitStreaks();
@@ -2985,8 +2988,8 @@ function saveQuote(){whyQuote=document.getElementById("quoteInput").value.trim()
 
 function openAddGoal(){editingGoalIdx=-1;document.getElementById("goalModalTitle").textContent="➕ Yangi maqsad";document.getElementById("goalIcon").value="";document.getElementById("goalText").value="";openModal("goalModal");}
 function openEditGoal(i){editingGoalIdx=i;document.getElementById("goalModalTitle").textContent="✏️ Maqsadni tahrirlash";document.getElementById("goalIcon").value=goals[i].icon;document.getElementById("goalText").value=goals[i].text;openModal("goalModal");}
-function saveGoal(){const icon=document.getElementById("goalIcon").value.trim()||"🎯";const text=document.getElementById("goalText").value.trim();if(!text)return;if(editingGoalIdx>=0)goals[editingGoalIdx]={icon,text};else goals.push({icon,text});localStorage.setItem("goals",JSON.stringify(goals));fbSchedule();playSound("add");closeModal("goalModal");renderGoals();}
-function deleteGoal(i){playSound("delete");goals.splice(i,1);localStorage.setItem("goals",JSON.stringify(goals));fbSchedule();renderGoals();}
+function saveGoal(){const icon=document.getElementById("goalIcon").value.trim()||"🎯";const text=document.getElementById("goalText").value.trim();if(!text)return;if(editingGoalIdx>=0)goals[editingGoalIdx]={icon,text};else goals.push({icon,text});localStorage.setItem("goals",JSON.stringify(goals));fbMarkDirty(["goals"]);fbSchedule();playSound("add");closeModal("goalModal");renderGoals();}
+function deleteGoal(i){playSound("delete");goals.splice(i,1);localStorage.setItem("goals",JSON.stringify(goals));fbMarkDirty(["goals"]);fbSchedule();renderGoals();}
 
 function openNotifyModal(){
   const perm=Notification.permission;
@@ -3890,7 +3893,7 @@ let channels = JSON.parse(localStorage.getItem("ytChannels") || "[]");
 let editingChannelId = null;
 let updatingChannelId = null;
 
-function saveChannels(){localStorage.setItem("ytChannels",JSON.stringify(channels));fbSchedule();}
+function saveChannels(){localStorage.setItem("ytChannels",JSON.stringify(channels));fbMarkDirty(["ytChannels"]);fbSchedule();}
 
 function openChannelModal(id){
   editingChannelId=id||null;
@@ -4089,7 +4092,7 @@ function getWeekKey(){
   return"review_"+days[0];
 }
 
-function saveReviewData(){localStorage.setItem("reviewData",JSON.stringify(reviewData));fbSchedule();}
+function saveReviewData(){localStorage.setItem("reviewData",JSON.stringify(reviewData));fbMarkDirty(["reviewData"]);fbSchedule();}
 
 function getCurrentReview(){
   const key=getWeekKey();
@@ -4261,7 +4264,7 @@ if(myGoals.length === 0){
   localStorage.setItem("myGoals", JSON.stringify(myGoals));
 }
 
-function saveMyGoals(){localStorage.setItem("myGoals",JSON.stringify(myGoals));fbSchedule();}
+function saveMyGoals(){localStorage.setItem("myGoals",JSON.stringify(myGoals));fbMarkDirty(["myGoals"]);fbSchedule();}
 
 function openSmartGoalModal(id){
   editingGoalSmart=id||null;
@@ -4554,7 +4557,7 @@ setTimeout(checkReminders, 5000); // App ochilganda 5 soniyada tekshir
 // ============================================================
 let sleepData = JSON.parse(localStorage.getItem("sleepData") || '{"history":[]}');
 
-function saveSleepData(){ localStorage.setItem("sleepData", JSON.stringify(sleepData)); fbSchedule(); }
+function saveSleepData(){ localStorage.setItem("sleepData", JSON.stringify(sleepData)); fbMarkDirty(["sleepData"]); fbSchedule(); }
 
 function getSleepStreak(){
   if(!sleepData.history.length) return 0;
@@ -5850,6 +5853,7 @@ function addKarma(pts, reason){
   karmaData.history.push({pts:pts, reason:reason, date:getTodayStr(), time:new Date().toLocaleTimeString("uz-UZ",{hour:"2-digit",minute:"2-digit"})});
   if(karmaData.history.length > 100) karmaData.history = karmaData.history.slice(-100);
   localStorage.setItem("karmaData", JSON.stringify(karmaData));
+  fbMarkDirty(["karmaData"]);
   fbSchedule();
   updateKarmaUI();
   showKarmaToast("+" + pts + " karma — " + reason);
@@ -5991,6 +5995,7 @@ var PRAYERS = [
 
 function saveNamozData(){
   localStorage.setItem("namozData", JSON.stringify(namozData));
+  fbMarkDirty(["namozData"]);
   fbSchedule();
 }
 
@@ -6077,6 +6082,7 @@ var zanjirData = JSON.parse(localStorage.getItem("zanjirData") || JSON.stringify
 
 function saveZanjir(){
   localStorage.setItem("zanjirData", JSON.stringify(zanjirData));
+  fbMarkDirty(["zanjirData"]);
   fbSchedule();
 }
 
@@ -6414,6 +6420,7 @@ var XARAJAT_CATS = [
 
 function saveXarajat(){
   localStorage.setItem("xarajatData", JSON.stringify(xarajatData));
+  fbMarkDirty(["xarajatData"]);
   fbSchedule();
 }
 
@@ -6686,21 +6693,36 @@ function fbGetData(){
   };
 }
 
+var fbDirtyFields = {};
+
+function fbMarkDirty(fields){
+  fields.forEach(function(f){ fbDirtyFields[f] = true; });
+}
+
 function fbPush(){
   if(fbSyncing) return;
   var uid = getFbUserId();
   if(!uid){ fbPendingSync = true; fbSetStatus("offline"); return; }
-
   if(!navigator.onLine){ fbPendingSync = true; fbSetStatus("offline"); return; }
+
+  var allData = fbGetData();
+  var dirtyKeys = Object.keys(fbDirtyFields);
+  var payload = {};
+  if(dirtyKeys.length === 0){
+    payload = allData; // birinchi push — hammasi
+  } else {
+    dirtyKeys.forEach(function(k){ payload[k] = allData[k]; });
+  }
+  fbDirtyFields = {};
 
   fbSyncing = true;
   fbPendingSync = false;
   fbSetStatus("syncing");
 
   fetch(FB_DB + "/users/" + uid + ".json", {
-    method: "PUT",
+    method: "PATCH",
     headers: {"Content-Type": "application/json"},
-    body: JSON.stringify(fbGetData())
+    body: JSON.stringify(payload)
   }).then(function(r){
     fbSyncing = false;
     if(r.ok){ fbSetStatus("ok"); }
@@ -6871,10 +6893,15 @@ window.addEventListener("beforeunload", function(){
   var uid = getFbUserId();
   if(uid && navigator.onLine){
     try {
+      var allData = fbGetData();
+      var dirtyKeys = Object.keys(fbDirtyFields);
+      var payload = dirtyKeys.length > 0 ? {} : allData;
+      if(dirtyKeys.length > 0) dirtyKeys.forEach(function(k){ payload[k] = allData[k]; });
+      fbDirtyFields = {};
       var xhr = new XMLHttpRequest();
-      xhr.open("PUT", FB_DB + "/users/" + uid + ".json", false);
+      xhr.open("PATCH", FB_DB + "/users/" + uid + ".json", false);
       xhr.setRequestHeader("Content-Type", "application/json");
-      xhr.send(JSON.stringify(fbGetData()));
+      xhr.send(JSON.stringify(payload));
     } catch(e){}
   }
 });
@@ -6887,10 +6914,15 @@ document.addEventListener("visibilitychange", function(){
       clearTimeout(fbSyncTimer);
       fbSyncTimer = null;
       // Async push — mobil brauzer biroz vaqt beradi
+      var allData = fbGetData();
+      var dirtyKeys = Object.keys(fbDirtyFields);
+      var payload = dirtyKeys.length > 0 ? {} : allData;
+      if(dirtyKeys.length > 0) dirtyKeys.forEach(function(k){ payload[k] = allData[k]; });
+      fbDirtyFields = {};
       fetch(FB_DB + "/users/" + uid + ".json", {
-        method: "PUT",
+        method: "PATCH",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(fbGetData()),
+        body: JSON.stringify(payload),
         keepalive: true
       }).catch(function(){});
     }
@@ -6929,6 +6961,7 @@ const _origSaveTasks = saveTasks;
 function saveTasks(){
   localStorage.setItem("tasks", JSON.stringify(tasks));
   localStorage.setItem("fbSavedAt", Date.now().toString());
+  fbMarkDirty(["tasks","frogTaskId"]);
   fbSchedule();
   swSaveTasksToDB();
 }
