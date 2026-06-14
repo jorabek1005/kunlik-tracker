@@ -3328,21 +3328,40 @@ function renderTasks(){
     const subtasksTotal = t.subtasks ? t.subtasks.length : 0;
     const subtasksDone  = t.subtasks ? t.subtasks.filter(s=>s.done).length : 0;
 
-    // Chips
-    const chips = [];
+    // Due date + time — katta va yaqqol
+    let dueDateHtml = "";
     if(t.due){
       const overdue = t.due < todayStr;
-      chips.push(`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;
-        font-size:10px;font-weight:700;background:${overdue?"rgba(255,68,102,0.15)":"rgba(255,255,255,0.06)"};
-        color:${overdue?"#ff4466":"var(--muted)"}">
-        ${overdue?"⚠️":"📅"} ${t.due.slice(5)}</span>`);
+      const planned = t.due > todayStr;
+      const [y,mo,d] = t.due.split("-");
+      const dateStr = d+"."+mo+"."+y;
+      const timeStr = t.taskTime || "";
+      const bgColor = overdue ? "rgba(255,68,102,0.18)" : planned ? "rgba(77,159,255,0.15)" : "rgba(0,245,160,0.12)";
+      const txtColor = overdue ? "#ff6680" : planned ? "#60b0ff" : "#00f0a0";
+      const borderColor = overdue ? "rgba(255,68,102,0.45)" : planned ? "rgba(77,159,255,0.4)" : "rgba(0,245,160,0.35)";
+      dueDateHtml = `<div style="display:inline-flex;align-items:center;gap:6px;margin-top:7px;
+        padding:5px 12px;border-radius:20px;
+        background:${bgColor};border:1px solid ${borderColor}">
+        <span style="font-size:13px">${overdue?"⚠️":planned?"📅":"✅"}</span>
+        <span style="font-size:14px;font-weight:800;color:${txtColor}">${dateStr}</span>
+        ${timeStr?`<span style="font-size:13px;font-weight:700;color:${txtColor};opacity:0.9">🕐 ${timeStr}</span>`:""}
+      </div>`;
+    } else if(t.taskTime){
+      dueDateHtml = `<div style="display:inline-flex;align-items:center;gap:6px;margin-top:7px;
+        padding:5px 12px;border-radius:20px;
+        background:rgba(77,159,255,0.12);border:1px solid rgba(77,159,255,0.35)">
+        <span style="font-size:14px;font-weight:800;color:#60b0ff">🕐 ${t.taskTime}</span>
+      </div>`;
     }
+
+    // Chips (kichik meta)
+    const chips = [];
     if(t.recurring) chips.push(`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(77,159,255,0.1);color:var(--blue)">🔄 ${t.recurring}</span>`);
-    if(t.taskTime)  chips.push(`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(77,159,255,0.1);color:var(--blue)">🕐 ${t.taskTime}</span>`);
     if(t.project)   chips.push(`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(167,139,250,0.1);color:var(--purple)"># ${t.project}</span>`);
     if(subtasksTotal) chips.push(`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(255,255,255,0.06);color:var(--muted)">${subtasksDone}/${subtasksTotal}</span>`);
 
-    const chipsHtml = chips.length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">${chips.join("")}</div>` : "";
+    const chipsHtml = `${dueDateHtml}${chips.length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">${chips.join("")}</div>`:""}`;
+
 
     // Subtasks
     const subtasksHtml = subtasksTotal ? `
@@ -6236,15 +6255,16 @@ function renderNamoz(){
     var done = !!today[p.id];
     var time = namozTimes ? namozTimes[p.id] : "--:--";
     var isNext = next && next.prayer.id===p.id && !done;
+    var isDarkMode = document.body.classList.contains('light') === false;
     return '<div onclick="toggleNamoz(\''+p.id+'\')" style="display:flex;align-items:center;gap:12px;padding:14px 16px;'
-      +'background:'+(done?"linear-gradient(135deg,rgba(0,200,100,0.18),rgba(0,200,100,0.08))":isNext?"rgba(255,209,102,0.08)":"rgba(255,255,255,0.08)")+';'
-      +'border:1px solid '+(done?"rgba(0,200,100,0.6)":isNext?"rgba(255,209,102,0.6)":"rgba(255,255,255,0.18)")+';'
+      +'background:'+(done?"linear-gradient(135deg,rgba(0,200,100,0.18),rgba(0,200,100,0.08))":isNext?"rgba(255,209,102,0.1)":"rgba(128,128,180,0.12)")+';'
+      +'border:1px solid '+(done?"rgba(0,200,100,0.6)":isNext?"rgba(255,209,102,0.6)":"rgba(100,100,180,0.35)")+';'
       +'border-radius:12px;cursor:pointer;transition:all 0.2s;margin-bottom:8px;'
       +(isNext?"box-shadow:0 0 20px rgba(255,209,102,0.25);":"")+'">'
       +'<div style="font-size:24px">'+p.icon+'</div>'
       +'<div style="flex:1">'
-      +'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:15px;font-weight:800;color:'+(done?"#00e87a":isNext?"#ffd166":"#ffffff")+'">'+p.name+'</div>'
-      +'<div style="font-size:12px;color:rgba(255,255,255,0.9);margin-top:2px;font-weight:700">'+p.ar+' · <span style="color:'+(done?"#00e87a":isNext?"#ffd166":"#7dd3fc")+';font-size:13px;font-weight:800">'+time+'</span></div>'
+      +'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:15px;font-weight:800;color:'+(done?"#00c87a":isNext?"#d4a000":"var(--text)")+'">'+p.name+'</div>'
+      +'<div style="font-size:12px;color:var(--text2);margin-top:2px;font-weight:700">'+p.ar+' · <span style="color:'+(done?"#00c87a":isNext?"#d4a000":"var(--blue)")+';font-size:13px;font-weight:800">'+time+'</span></div>'
       +'</div>'
       +(isNext?'<div style="font-size:10px;background:rgba(255,209,102,0.2);color:#ffd166;border:1px solid rgba(255,209,102,0.5);border-radius:20px;padding:3px 8px;font-weight:800">Keyingi</div>':"")
       +'<div style="width:28px;height:28px;border-radius:50%;border:2px solid '+(done?"#00e87a":"rgba(255,255,255,0.35)")+';'
@@ -6260,7 +6280,7 @@ function renderNamoz(){
       +'<div style="width:100%;border-radius:4px 4px 0 0;height:'+h+'px;min-height:3px;'
       +'background:'+(w.cnt===5?"#00c864":w.cnt>0?"#ffd166":"rgba(255,255,255,0.1)")+';'
       +(w.isToday?"box-shadow:0 0 8px rgba(0,200,100,0.4);":"")+';transition:height 0.5s"></div>'
-      +'<div style="font-size:10px;color:'+(w.isToday?"#00e87a":"rgba(255,255,255,0.8)")+';font-weight:'+(w.isToday?"800":"600")+'">'+w.day+'</div>'
+      +'<div style="font-size:10px;color:'+(w.isToday?"var(--green)":"var(--text2)")+';font-weight:'+(w.isToday?"800":"600")+'">'+w.day+'</div>'
       +'</div>';
   }).join("");
 
@@ -6276,36 +6296,36 @@ function renderNamoz(){
 
   el.innerHTML =
     // Hero card
-    '<div style="background:linear-gradient(135deg,rgba(0,40,20,0.6),rgba(0,30,50,0.6));border:1px solid rgba(0,200,100,0.4);'
+    '<div style="background:var(--card2);border:1px solid rgba(0,200,100,0.4);'
     +'border-radius:20px;padding:20px;margin-bottom:16px;position:relative;overflow:hidden;backdrop-filter:blur(10px)">'
     +'<div style="position:absolute;top:-30px;right:-30px;width:120px;height:120px;'
-    +'background:radial-gradient(circle,rgba(0,200,100,0.2),transparent 70%);pointer-events:none"></div>'
-    +'<div style="font-size:11px;color:#00e87a;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px">🕌 Namoz Vaqtlari — Xiva</div>'
+    +'background:radial-gradient(circle,rgba(0,200,100,0.15),transparent 70%);pointer-events:none"></div>'
+    +'<div style="font-size:11px;color:var(--green);font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px">🕌 Namoz Vaqtlari — Xiva</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">'
-    +'<div style="text-align:center"><div style="font-family:\'Space Grotesk\',sans-serif;font-size:28px;font-weight:800;color:#00e87a">'+(namozData.streak||0)+'</div><div style="font-size:11px;color:rgba(255,255,255,0.8);font-weight:600">🔥 Streak</div></div>'
-    +'<div style="text-align:center"><div style="font-family:\'Space Grotesk\',sans-serif;font-size:28px;font-weight:800;color:#ffd166">'+doneCnt+'/5</div><div style="font-size:11px;color:rgba(255,255,255,0.8);font-weight:600">Bugun</div></div>'
-    +'<div style="text-align:center"><div style="font-family:\'Space Grotesk\',sans-serif;font-size:28px;font-weight:800;color:#c4b0ff">'+(namozData.bestStreak||0)+'</div><div style="font-size:11px;color:rgba(255,255,255,0.8);font-weight:600">Eng yaxshi</div></div>'
+    +'<div style="text-align:center"><div style="font-family:\'Space Grotesk\',sans-serif;font-size:28px;font-weight:800;color:var(--green)">'+(namozData.streak||0)+'</div><div style="font-size:11px;color:var(--text2);font-weight:600">🔥 Streak</div></div>'
+    +'<div style="text-align:center"><div style="font-family:\'Space Grotesk\',sans-serif;font-size:28px;font-weight:800;color:var(--yellow)">'+doneCnt+'/5</div><div style="font-size:11px;color:var(--text2);font-weight:600">Bugun</div></div>'
+    +'<div style="text-align:center"><div style="font-family:\'Space Grotesk\',sans-serif;font-size:28px;font-weight:800;color:var(--purple)">'+(namozData.bestStreak||0)+'</div><div style="font-size:11px;color:var(--text2);font-weight:600">Eng yaxshi</div></div>'
     +'</div>'
-    +(next?'<div style="font-size:13px;color:rgba(255,255,255,0.85);text-align:center;font-weight:600">⏳ Keyingi namoz: <b style="color:#ffd166">'+next.prayer.name+'</b> ('+next.time+') — '+countdownHtml+'</div>':"")
+    +(next?'<div style="font-size:13px;color:var(--text2);text-align:center;font-weight:600">⏳ Keyingi namoz: <b style="color:var(--yellow)">'+next.prayer.name+'</b> ('+next.time+') — '+countdownHtml+'</div>':"")
     +'</div>'
 
     // Prayer list
     +'<div style="margin-bottom:16px">'+prayerCards+'</div>'
 
     // Week chart
-    +'<div style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);border-radius:16px;padding:16px;margin-bottom:16px;backdrop-filter:blur(8px)">'
-    +'<div style="font-size:11px;color:rgba(255,255,255,0.9);font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">📊 Haftalik namozlar</div>'
+    +'<div style="background:var(--card);border:1px solid var(--border2);border-radius:16px;padding:16px;margin-bottom:16px;backdrop-filter:blur(8px)">'
+    +'<div style="font-size:11px;color:var(--text2);font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">📊 Haftalik namozlar</div>'
     +'<div style="display:flex;align-items:flex-end;gap:6px;height:48px">'+weekChart+'</div>'
     +'</div>'
 
     // Stats
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'
-    +'<div style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);border-radius:12px;padding:14px;text-align:center;backdrop-filter:blur(8px)">'
-    +'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:24px;font-weight:800;color:#00e87a">'+perfectDays+'</div>'
-    +'<div style="font-size:11px;color:rgba(255,255,255,0.85);margin-top:3px;font-weight:600">Mukammal kun</div></div>'
-    +'<div style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);border-radius:12px;padding:14px;text-align:center;backdrop-filter:blur(8px)">'
-    +'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:24px;font-weight:800;color:#c4b0ff">'+(totalDays>0?Math.round(perfectDays/totalDays*100):0)+'%</div>'
-    +'<div style="font-size:11px;color:rgba(255,255,255,0.85);margin-top:3px;font-weight:600">Mukammal kunlar</div></div>'
+    +'<div style="background:var(--card);border:1px solid var(--border2);border-radius:12px;padding:14px;text-align:center;">'
+    +'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:24px;font-weight:800;color:var(--green)">'+perfectDays+'</div>'
+    +'<div style="font-size:11px;color:var(--text2);margin-top:3px;font-weight:600">Mukammal kun</div></div>'
+    +'<div style="background:var(--card);border:1px solid var(--border2);border-radius:12px;padding:14px;text-align:center;">'
+    +'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:24px;font-weight:800;color:var(--purple)">'+(totalDays>0?Math.round(perfectDays/totalDays*100):0)+'%</div>'
+    +'<div style="font-size:11px;color:var(--text2);margin-top:3px;font-weight:600">Mukammal kunlar</div></div>'
     +'</div>'
 
     // Motivational quote
