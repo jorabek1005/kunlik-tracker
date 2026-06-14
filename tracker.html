@@ -325,6 +325,13 @@
   }
   .custom-habit-del:hover { color: var(--red); background: rgba(255,68,102,0.1); }
 
+  .recur-day-btn {
+    padding: 5px 10px; border-radius: 20px; border: 1.5px solid var(--border2);
+    background: transparent; color: var(--text2); font-size: 12px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s; font-family: var(--font-body);
+  }
+  .recur-day-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
   .add-habit-btn, .add-goal-btn {
     width: 100%; padding: 11px; background: transparent;
     border: 1.5px dashed var(--border2); border-radius: var(--r-md);
@@ -1345,7 +1352,18 @@
       <option value="weekly">🔄 Weekly</option>
       <option value="custom">✏️ Custom</option>
     </select>
-    <input class="modal-input" id="taskCustomRecur" placeholder="e.g. every 2 days..." style="display:none">
+    <div id="taskCustomRecurBox" style="display:none;padding:10px 12px;background:rgba(77,159,255,0.06);border:1px solid rgba(77,159,255,0.2);border-radius:10px;margin-bottom:2px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:600">Qaysi kunlarda takrorlansin:</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap" id="recurDayBtns">
+        <button type="button" onclick="toggleRecurDay(1)" id="rday1" class="recur-day-btn">Du</button>
+        <button type="button" onclick="toggleRecurDay(2)" id="rday2" class="recur-day-btn">Se</button>
+        <button type="button" onclick="toggleRecurDay(3)" id="rday3" class="recur-day-btn">Chor</button>
+        <button type="button" onclick="toggleRecurDay(4)" id="rday4" class="recur-day-btn">Pay</button>
+        <button type="button" onclick="toggleRecurDay(5)" id="rday5" class="recur-day-btn">Juma</button>
+        <button type="button" onclick="toggleRecurDay(6)" id="rday6" class="recur-day-btn">Shan</button>
+        <button type="button" onclick="toggleRecurDay(0)" id="rday0" class="recur-day-btn">Yak</button>
+      </div>
+    </div>
     <select class="modal-input" id="taskGoalLink" style="cursor:pointer">
       <option value="">🎯 Link to goal (optional)</option>
     </select>
@@ -3092,8 +3110,7 @@ function openTaskModal(id){
     const ttime=document.getElementById("taskTime");if(ttime)ttime.value=t.taskTime||"";
     const mit=document.getElementById("taskIsMIT");if(mit)mit.checked=!!t.isMIT;
     toggleCustomRecur(t.recurring||"");
-    const cr=document.getElementById("taskCustomRecur");
-    if(cr)cr.value=t.recurringCustom||"";
+    setSelectedRecurDays(t.recurringDays||[]);
   } else {
     document.getElementById("taskModalTitle").textContent="📝 Yangi vazifa";
     document.getElementById("taskName").value="";
@@ -3104,6 +3121,7 @@ function openTaskModal(id){
     const tr2=document.getElementById("taskRecurring");if(tr2)tr2.value="";
     populateGoalDropdown(null);
     toggleCustomRecur("");
+    setSelectedRecurDays([]);
     const ttime2=document.getElementById("taskTime");if(ttime2)ttime2.value="";
     const mit2=document.getElementById("taskIsMIT");if(mit2)mit2.checked=false;
   }
@@ -3111,8 +3129,27 @@ function openTaskModal(id){
 }
 
 function toggleCustomRecur(val){
-  const el=document.getElementById("taskCustomRecur");
+  const el=document.getElementById("taskCustomRecurBox");
   if(el)el.style.display=val==="custom"?"block":"none";
+}
+function toggleRecurDay(day){
+  const btn=document.getElementById("rday"+day);
+  if(!btn)return;
+  btn.classList.toggle("active");
+}
+function getSelectedRecurDays(){
+  return [0,1,2,3,4,5,6].filter(d=>{
+    const b=document.getElementById("rday"+d);
+    return b&&b.classList.contains("active");
+  });
+}
+function setSelectedRecurDays(days){
+  [0,1,2,3,4,5,6].forEach(d=>{
+    const b=document.getElementById("rday"+d);
+    if(!b)return;
+    if(days&&days.includes(d))b.classList.add("active");
+    else b.classList.remove("active");
+  });
 }
 function populateGoalDropdown(selected){
   const sel=document.getElementById("taskGoalLink"); if(!sel)return;
@@ -3156,7 +3193,7 @@ function saveTask(){
     goalLink:(document.getElementById("taskGoalLink")||{value:""}).value,
     label:(document.getElementById("taskLabel")||{value:""}).value.trim(),
     reminder:(document.getElementById("taskReminder")||{value:""}).value,
-    recurringCustom:document.getElementById("taskCustomRecur")?document.getElementById("taskCustomRecur").value.trim():"",
+    recurringDays:document.getElementById("taskRecurring").value==="custom"?getSelectedRecurDays():[],
     taskTime:(document.getElementById("taskTime")||{value:""}).value||"",
     isMIT:!!(document.getElementById("taskIsMIT")||{checked:false}).checked,
     done:false,
@@ -3237,10 +3274,15 @@ function toggleTask(id){
       while(nextDate.getDay()===0||nextDate.getDay()===6)nextDate.setDate(nextDate.getDate()+1);
     }
     else if(t.recurring==="weekly"){nextDate.setDate(now.getDate()+7);}
+    else if(t.recurring==="custom"&&t.recurringDays&&t.recurringDays.length>0){
+      nextDate.setDate(now.getDate()+1);
+      var tries=0;
+      while(!t.recurringDays.includes(nextDate.getDay())&&tries<7){nextDate.setDate(nextDate.getDate()+1);tries++;}
+    }
     const nextStr=nextDate.toISOString().split("T")[0];
     const exists=tasks.find(x=>x.name===t.name&&x.due===nextStr&&!x.done);
     if(!exists){
-      tasks.push({id:"t"+Date.now(),name:t.name,priority:t.priority,project:t.project,due:nextStr,parent:"",recurring:t.recurring,done:false,created:getTodayStr(),subtasks:[]});
+      tasks.push({id:"t"+Date.now(),name:t.name,priority:t.priority,project:t.project,due:nextStr,parent:"",recurring:t.recurring,recurringDays:t.recurringDays||[],done:false,created:getTodayStr(),subtasks:[]});
     }
   }
   saveTasks(); renderTasks();
@@ -3369,7 +3411,7 @@ function renderTasks(){
     const chips = [];
     const prLabels = {high:"🔴 Muhim", med:"🟡 O'rta", low:"🟢 Oddiy"};
     if(!t.isMIT && t.priority) chips.push(`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;background:${pr.tag};color:${pr.tagTxt}">${prLabels[t.priority]||t.priority}</span>`);
-    if(t.recurring) chips.push(`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(77,159,255,0.12);color:var(--blue)">🔄 ${t.recurring}</span>`);
+    if(t.recurring){const dayNames=["Ya","Du","Se","Chor","Pay","Ju","Sha"];const recurLabel=t.recurring==="custom"&&t.recurringDays&&t.recurringDays.length>0?"🔄 "+(t.recurringDays.map(d=>dayNames[d]).join(", ")):"🔄 "+t.recurring;chips.push(`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(77,159,255,0.12);color:var(--blue)">${recurLabel}</span>`);}
     if(t.project)   chips.push(`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(167,139,250,0.12);color:var(--purple)"># ${t.project}</span>`);
     if(subtasksTotal) chips.push(`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(128,128,128,0.12);color:var(--muted)">${subtasksDone}/${subtasksTotal} subtask</span>`);
 
