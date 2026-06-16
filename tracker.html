@@ -2342,6 +2342,8 @@ function renderHabits(){
 }
 
 function setHabit(id,val){
+  if(!state[today]) state[today]={habits:{},note:""};
+  if(!state[today].habits) state[today].habits={};
   if(state[today].habits[id]===val){
     delete state[today].habits[id];
     playSound("click");
@@ -2361,6 +2363,7 @@ function setHabit(id,val){
 }
 
 function saveDay(){
+  if(!state[today]) state[today]={habits:{},note:""};
   state[today].note=document.getElementById("noteBox").value;
   state[today].saved=true;
   localStorage.setItem("trackerState",JSON.stringify(state));
@@ -3764,6 +3767,7 @@ function decomposeGoal(){
   let decompSteps=JSON.parse(localStorage.getItem("decompSteps")||"{}");
   if(!decompSteps[goal])decompSteps[goal]=["","","","",""];
   localStorage.setItem("decompSteps",JSON.stringify(decompSteps));
+  fbMarkDirty(["decompSteps"]); fbSchedule();
   renderDecomposeSteps(goal);
 }
 
@@ -3804,6 +3808,7 @@ function addDecomposeRow(goal){
   newSteps.push("");
   decompSteps[goal]=newSteps;
   localStorage.setItem("decompSteps",JSON.stringify(decompSteps));
+  fbMarkDirty(["decompSteps"]); fbSchedule();
 }
 
 function addDecomposeStepToTask(idx,goal){
@@ -4494,6 +4499,8 @@ function toggleLang(){
   lang=lang==="uz"?"en":"uz";
   localStorage.setItem("lang",lang);
   applyLang();
+  updateNavLabels();
+  renderPage(currentPage);
 }
 
 
