@@ -6863,7 +6863,9 @@ function fbPull(){
     if(!data){ fbSetStatus("ok"); return; }
     fbApplyData(data);
     fbSetStatus("ok");
-    renderPage(currentPage);
+    var ae = document.activeElement;
+    var isTyping = ae && (ae.tagName==="INPUT"||ae.tagName==="TEXTAREA");
+    if(!isTyping) renderPage(currentPage);
   }).catch(function(){
     fbSetStatus(navigator.onLine ? "error" : "offline");
   });
