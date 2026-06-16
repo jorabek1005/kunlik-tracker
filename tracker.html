@@ -4434,11 +4434,19 @@ function renderMyGoals(){
   const weekDays2=getWeekDays();
   const weekKey2="week_"+weekDays2[0];
   const savedWeek=weeklyData[weekKey2]||{goals:[]};
-  const weekGoals=savedWeek.goals||[];
-  const weekGoalsHtml=weekGoals.map((g,i)=>`
-    <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--gb);border-radius:8px;border:1px solid var(--gbd);margin-bottom:8px">
-      <div style="flex:1;font-size:12px;font-weight:600">${g}</div>
-      <button onclick="deleteWeekGoal(${i})" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:13px">✕</button>
+  const weekGoalsNorm=(savedWeek.goals||[]).map(g=>typeof g==="string"?{text:g,done:false}:g);
+  const wgDone=weekGoalsNorm.filter(g=>g.done).length;
+  const wgTotal=weekGoalsNorm.length;
+  const wgPct=wgTotal>0?Math.round(wgDone/wgTotal*100):0;
+  const todayStr2=getTodayStr();
+  const daysLeftInWeek=Math.max(0,7-(weekDays2.indexOf(todayStr2)>=0?weekDays2.indexOf(todayStr2):6)-1);
+  const weekTasksDone=tasks.filter(t=>t.done&&t.doneDate&&weekDays2.includes(t.doneDate)).length;
+  const weekTasksDue=tasks.filter(t=>!t.done&&t.due&&weekDays2.includes(t.due)).length;
+  const weekGoalsHtml=weekGoalsNorm.map((g,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--gb);border-radius:10px;border:1px solid var(--gbd);margin-bottom:8px">
+      <input type="checkbox" ${g.done?"checked":""} onchange="toggleWeekGoal(${i})" style="width:18px;height:18px;accent-color:var(--blue);cursor:pointer;flex-shrink:0">
+      <div style="flex:1;font-size:13px;font-weight:600;${g.done?"text-decoration:line-through;color:var(--muted)":""}">${g.text}</div>
+      <button onclick="deleteWeekGoal(${i})" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 6px">✕</button>
     </div>`).join("");
 
   // Decompose section
@@ -4459,17 +4467,41 @@ function renderMyGoals(){
   </div>
   ${cardsHtml}
 
-  <div style="margin-top:24px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px">
+  <div style="margin-top:24px;background:var(--card);border:1px solid var(--border);border-radius:18px;padding:22px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-      <div style="font-family:'Unbounded',sans-serif;font-size:13px;font-weight:900;color:var(--blue)">📅 THIS WEEK'S PLAN</div>
-      <div style="font-size:10px;color:var(--muted)">${weekDays2[0]} — ${weekDays2[6]}</div>
+      <div style="font-family:'Unbounded',sans-serif;font-size:16px;font-weight:900;color:var(--blue)">📅 THIS WEEK'S PLAN</div>
+      <div style="font-size:11px;color:var(--muted);font-weight:600">${weekDays2[0]} — ${weekDays2[6]}</div>
     </div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:14px">What will you achieve this week?</div>
-    ${weekGoalsHtml}
-    <div style="display:flex;gap:8px">
-      <input id="weekGoalInput" class="modal-input" placeholder="e.g. Finish 1 book this week" style="background:var(--bg);margin-bottom:0;flex:1">
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px">What will you achieve this week?</div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">
+      <div style="background:var(--gb);border:1px solid var(--gbd);border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:20px;font-weight:900;color:var(--blue)">${wgDone}/${wgTotal}</div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px">GOALS DONE</div>
+      </div>
+      <div style="background:var(--gb);border:1px solid var(--gbd);border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:20px;font-weight:900;color:var(--green)">${weekTasksDone}</div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px">TASKS DONE</div>
+      </div>
+      <div style="background:var(--gb);border:1px solid var(--gbd);border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:20px;font-weight:900;color:var(--yellow)">${daysLeftInWeek}</div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px">DAYS LEFT</div>
+      </div>
+    </div>
+
+    ${wgTotal>0?`<div style="margin-bottom:16px">
+      <div style="height:8px;background:var(--gb);border-radius:20px;overflow:hidden">
+        <div style="height:100%;width:${wgPct}%;background:linear-gradient(90deg,var(--blue),var(--green));border-radius:20px;transition:width 0.3s"></div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:5px;text-align:right">${wgPct}% bajarildi</div>
+    </div>`:""}
+
+    ${weekGoalsHtml || `<div style="font-size:12px;color:var(--muted);text-align:center;padding:14px 0">Hali maqsad qo'shilmagan</div>`}
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <input id="weekGoalInput" class="modal-input" placeholder="e.g. Finish 1 book this week" style="background:var(--bg);margin-bottom:0;flex:1" onkeydown="if(event.key==='Enter')addWeekGoal()">
       <button onclick="addWeekGoal()" style="padding:10px 14px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-family:'Unbounded',sans-serif;font-size:10px;font-weight:700;cursor:pointer">ADD</button>
     </div>
+    ${weekTasksDue>0?`<div style="margin-top:14px;padding:10px 12px;background:rgba(255,209,102,0.08);border:1px solid rgba(255,209,102,0.25);border-radius:10px;font-size:11px;color:var(--yellow);font-weight:600">⏳ Bu hafta ${weekTasksDue} ta task muddati bor</div>`:""}
   </div>
 
   ${decompHtml}`;
@@ -4482,7 +4514,7 @@ function addWeekGoal(){
   const weekKey2="week_"+weekDays2[0];
   if(!weeklyData[weekKey2])weeklyData[weekKey2]={goals:[]};
   if(!weeklyData[weekKey2].goals)weeklyData[weekKey2].goals=[];
-  weeklyData[weekKey2].goals.push(inp.value.trim());
+  weeklyData[weekKey2].goals.push({text:inp.value.trim(),done:false});
   localStorage.setItem("weeklyData",JSON.stringify(weeklyData));
   fbMarkDirty(["weeklyData"]); fbSchedule();
   inp.value="";
@@ -4496,6 +4528,22 @@ function deleteWeekGoal(idx){
   weeklyData[weekKey2].goals.splice(idx,1);
   localStorage.setItem("weeklyData",JSON.stringify(weeklyData));
   fbMarkDirty(["weeklyData"]); fbSchedule();
+  renderMyGoals();
+}
+
+function toggleWeekGoal(idx){
+  const weekDays2=getWeekDays();
+  const weekKey2="week_"+weekDays2[0];
+  if(!weeklyData[weekKey2]||!weeklyData[weekKey2].goals)return;
+  const g=weeklyData[weekKey2].goals[idx];
+  if(typeof g==="string"){
+    weeklyData[weekKey2].goals[idx]={text:g,done:true};
+  } else {
+    g.done=!g.done;
+  }
+  localStorage.setItem("weeklyData",JSON.stringify(weeklyData));
+  fbMarkDirty(["weeklyData"]); fbSchedule();
+  playSound(weeklyData[weekKey2].goals[idx].done?"task_done":"click");
   renderMyGoals();
 }
 
