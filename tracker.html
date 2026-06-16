@@ -1311,6 +1311,8 @@
       <option value="entertainment">🎬 Entertainment</option>
       <option value="other">📦 Other</option>
     </select>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Kuniga nechta video yuklash kerak:</div>
+    <input class="modal-input" id="chDailyTarget" type="number" min="0" max="20" placeholder="masalan: 1" value="1">
     <div class="modal-row">
       <button class="modal-btn cancel" onclick="closeModal('channelModal')">Cancel</button>
       <button class="modal-btn confirm" onclick="saveChannel()">Save</button>
@@ -3973,11 +3975,13 @@ function openChannelModal(id){
     document.getElementById("chName").value=ch.name;
     document.getElementById("chHandle").value=ch.handle||"";
     document.getElementById("chNiche").value=ch.niche||"gaming";
+    document.getElementById("chDailyTarget").value=ch.dailyTarget!=null?ch.dailyTarget:1;
   } else {
     document.getElementById("channelModalTitle").textContent="📺 Yangi kanal";
     document.getElementById("chName").value="";
     document.getElementById("chHandle").value="";
     document.getElementById("chNiche").value="gaming";
+    document.getElementById("chDailyTarget").value=1;
   }
   openModal("channelModal");
 }
@@ -3990,13 +3994,15 @@ function saveChannel(){
     name,
     handle:document.getElementById("chHandle").value.trim(),
     niche:document.getElementById("chNiche").value,
+    dailyTarget:parseInt(document.getElementById("chDailyTarget").value)||0,
     monetized:false,
     history:[],
+    uploadLog:{},
     created:getTodayStr(),
   };
   if(editingChannelId){
     const idx=channels.findIndex(x=>x.id===editingChannelId);
-    if(idx>=0){ch.monetized=channels[idx].monetized;ch.history=channels[idx].history;channels[idx]=ch;}
+    if(idx>=0){ch.monetized=channels[idx].monetized;ch.history=channels[idx].history;ch.uploadLog=channels[idx].uploadLog||{};channels[idx]=ch;}
   } else {
     channels.push(ch);
   }
@@ -4016,10 +4022,56 @@ function toggleMonetized(id){
   if(ch){ch.monetized=!ch.monetized;saveChannels();renderYoutube();}
 }
 
+function getChannelUploadToday(ch){
+  if(!ch.uploadLog) ch.uploadLog={};
+  return ch.uploadLog[getTodayStr()]||0;
+}
+
+function getChannelUploadStreak(ch){
+  if(!ch.uploadLog||!ch.dailyTarget) return 0;
+  let streak=0;
+  const d=new Date();
+  for(let i=0;i<365;i++){
+    const k=new Date(d); k.setDate(d.getDate()-i);
+    const key=k.toISOString().split("T")[0];
+    const cnt=ch.uploadLog[key]||0;
+    if(cnt>=ch.dailyTarget) streak++;
+    else if(i>0) break;
+    else if(i===0) continue;
+  }
+  return streak;
+}
+
+function incrementChannelUpload(id){
+  const ch=channels.find(x=>x.id===id);
+  if(!ch) return;
+  if(!ch.uploadLog) ch.uploadLog={};
+  const today=getTodayStr();
+  const cur=ch.uploadLog[today]||0;
+  const wasComplete=ch.dailyTarget>0&&cur>=ch.dailyTarget;
+  ch.uploadLog[today]=cur+1;
+  saveChannels();
+  playSound("habit_done");
+  const nowComplete=ch.dailyTarget>0&&ch.uploadLog[today]>=ch.dailyTarget;
+  if(!wasComplete&&nowComplete) addKarma(10,ch.name+": kunlik video maqsadi bajarildi");
+  renderYoutube();
+}
+
+function decrementChannelUpload(id){
+  const ch=channels.find(x=>x.id===id);
+  if(!ch) return;
+  if(!ch.uploadLog) ch.uploadLog={};
+  const today=getTodayStr();
+  ch.uploadLog[today]=Math.max(0,(ch.uploadLog[today]||0)-1);
+  saveChannels();
+  renderYoutube();
+}
+
 function openChannelUpdate(id){
   updatingChannelId=id;
   const ch=channels.find(x=>x.id===id);
   if(!ch)return;
+  if(!Array.isArray(ch.history)) ch.history=[];
   const last=ch.history[ch.history.length-1];
   document.getElementById("channelUpdateInfo").textContent=ch.name+" — "+getTodayStr();
   document.getElementById("updSubs").value=last?last.subs:"";
@@ -4061,7 +4113,34 @@ function renderYoutube(){
     return;
   }
 
+  // Bugungi video rejasi — barcha kanallar bo'yicha checklist
+  const targetChannels=channels.filter(ch=>(ch.dailyTarget||0)>0);
+  const totalTarget=targetChannels.reduce((s,ch)=>s+ch.dailyTarget,0);
+  const totalDone=targetChannels.reduce((s,ch)=>s+Math.min(getChannelUploadToday(ch),ch.dailyTarget),0);
+  const planPct=totalTarget>0?Math.round(totalDone/totalTarget*100):0;
+  const planHtml=targetChannels.length===0?"":`<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:18px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div style="font-family:'Unbounded',sans-serif;font-size:15px;font-weight:900;color:var(--green)">📋 BUGUNGI VIDEO REJASI</div>
+      <div style="font-size:12px;font-weight:700;color:var(--muted)">${totalDone}/${totalTarget}</div>
+    </div>
+    <div style="height:8px;background:var(--gb);border-radius:20px;overflow:hidden;margin-bottom:14px">
+      <div style="height:100%;width:${planPct}%;background:linear-gradient(90deg,var(--green),var(--blue));border-radius:20px;transition:width 0.3s"></div>
+    </div>
+    ${targetChannels.map(ch=>{
+      const done=getChannelUploadToday(ch);
+      const complete=done>=ch.dailyTarget;
+      return`<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:var(--gb);border-radius:10px;border:1px solid var(--gbd);margin-bottom:6px">
+        <span style="font-size:13px;${complete?"":"opacity:0.4"}">${complete?"✅":"⬜"}</span>
+        <div style="flex:1;font-size:12px;font-weight:700;${complete?"color:var(--muted);text-decoration:line-through":""}">${ch.name}</div>
+        <div style="font-size:11px;font-weight:700;color:${complete?"var(--green)":"var(--yellow)"}">${Math.min(done,ch.dailyTarget)}/${ch.dailyTarget}</div>
+        <button onclick="decrementChannelUpload('${ch.id}')" style="width:26px;height:26px;border-radius:50%;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;font-size:14px">−</button>
+        <button onclick="incrementChannelUpload('${ch.id}')" style="width:26px;height:26px;border-radius:50%;border:none;background:var(--green);color:#000;cursor:pointer;font-size:14px;font-weight:700">+</button>
+      </div>`;
+    }).join("")}
+  </div>`;
+
   const cardsHtml=channels.map(ch=>{
+    if(!Array.isArray(ch.history)) ch.history=[];
     const last=ch.history[ch.history.length-1];
     const prev=ch.history[ch.history.length-2];
     const subs=last?last.subs:0;
@@ -4091,6 +4170,18 @@ function renderYoutube(){
 
     // Niche icon
     const nicheIcon={gaming:"🎮",education:"📚",entertainment:"🎬",other:"📦"}[ch.niche]||"📺";
+    const upDone=getChannelUploadToday(ch);
+    const upTarget=ch.dailyTarget||0;
+    const upComplete=upTarget>0&&upDone>=upTarget;
+    const upStreak=getChannelUploadStreak(ch);
+    const dailyTaskHtml=upTarget>0?`<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:${upComplete?"rgba(0,245,160,0.08)":"rgba(255,209,102,0.08)"};border:1px solid ${upComplete?"rgba(0,245,160,0.25)":"rgba(255,209,102,0.25)"};border-radius:10px;margin-bottom:12px">
+      <span style="font-size:16px">${upComplete?"✅":"🎬"}</span>
+      <div style="flex:1">
+        <div style="font-size:11px;font-weight:700;color:${upComplete?"var(--green)":"var(--yellow)"}">Bugun: ${upDone}/${upTarget} video${upStreak>0?" · 🔥"+upStreak+" kun":""}</div>
+      </div>
+      <button onclick="decrementChannelUpload('${ch.id}')" style="width:26px;height:26px;border-radius:50%;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;font-size:14px">−</button>
+      <button onclick="incrementChannelUpload('${ch.id}')" style="width:26px;height:26px;border-radius:50%;border:none;background:var(--green);color:#000;cursor:pointer;font-size:14px;font-weight:700">+</button>
+    </div>`:"";
 
     return`<div class="yt-channel-card">
       <div class="yt-channel-header">
@@ -4109,6 +4200,8 @@ function renderYoutube(){
           <button class="task-action-btn" onclick="deleteChannel('${ch.id}')">🗑</button>
         </div>
       </div>
+
+      ${dailyTaskHtml}
 
       <div class="yt-stats-grid">
         <div class="yt-stat">
@@ -4146,6 +4239,7 @@ function renderYoutube(){
     <div style="font-family:'Unbounded',sans-serif;font-size:16px;font-weight:900;color:var(--text)">📺 KANALLARIM</div>
     <button onclick="openChannelModal()" style="padding:8px 14px;background:var(--green);color:#000;border:none;border-radius:8px;font-family:'Unbounded',sans-serif;font-size:10px;font-weight:700;cursor:pointer">+ KANAL</button>
   </div>
+  ${planHtml}
   ${cardsHtml}
   <button class="yt-add-btn" onclick="openChannelModal()">+ YANGI KANAL QO'SHISH</button>`;
 }
@@ -6890,6 +6984,7 @@ function fbApplyData(data){
   if(!Array.isArray(incomeData.entries)) incomeData.entries = [];
   if(!Array.isArray(myGoals)) myGoals = [];
   if(!Array.isArray(channels)) channels = [];
+  channels.forEach(function(ch){ if(!Array.isArray(ch.history)) ch.history = []; });
   if(!sleepData || !Array.isArray(sleepData.history)) sleepData = {history:[]};
   if(!Array.isArray(reviewData)) reviewData = [];
   if(!karmaData || typeof karmaData !== "object") karmaData = {total:0, history:[]};
@@ -7105,6 +7200,8 @@ if(!Array.isArray(incomeData.entries)) incomeData.entries = [];
 if(!Array.isArray(karmaData.history)) karmaData.history = [];
 if(!Array.isArray(xarajatData.entries)) xarajatData.entries = [];
 if(!sleepData || !Array.isArray(sleepData.history)) sleepData = {history:[]};
+if(!Array.isArray(channels)) channels = [];
+channels.forEach(function(ch){ if(!Array.isArray(ch.history)) ch.history = []; });
 if(state && typeof state === "object"){
   Object.keys(state).forEach(function(k){
     if(!state[k]) state[k] = {};
