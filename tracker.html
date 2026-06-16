@@ -1345,7 +1345,7 @@
     <input class="modal-input" id="taskProject" placeholder="Project (e.g. YouTube, Personal)">
     <input class="modal-input" id="taskDue" type="date">
     <input class="modal-input" id="taskTime" type="time" placeholder="⏰ Vaqt (ixtiyoriy)">
-    <select class="modal-input" id="taskRecurring" style="cursor:pointer" onchange="toggleCustomRecur(this.value)">
+    <select class="modal-input" id="taskRecurring" style="cursor:pointer" onchange="onRecurringChange(this.value)">
       <option value="">One-time</option>
       <option value="daily">🔄 Daily</option>
       <option value="weekdays">🔄 Weekdays (Mon-Fri)</option>
@@ -3134,6 +3134,13 @@ function openTaskModal(id){
 function toggleCustomRecur(val){
   const el=document.getElementById("taskCustomRecurBox");
   if(el)el.style.display=val==="custom"?"block":"none";
+}
+function onRecurringChange(val){
+  toggleCustomRecur(val);
+  if(val==="custom"){
+    const due=document.getElementById("taskDue");
+    if(due)due.value="";
+  }
 }
 function toggleRecurDay(day){
   const btn=document.getElementById("rday"+day);
