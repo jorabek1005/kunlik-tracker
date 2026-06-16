@@ -3140,6 +3140,13 @@ function toggleRecurDay(day){
   if(!btn)return;
   btn.classList.toggle("active");
 }
+function computeRecurDue(recurType,days){
+  if(recurType!=="custom"||!days||days.length===0)return"";
+  var d=new Date();
+  var tries=0;
+  while(!days.includes(d.getDay())&&tries<7){d.setDate(d.getDate()+1);tries++;}
+  return d.toISOString().split("T")[0];
+}
 function getSelectedRecurDays(){
   return [0,1,2,3,4,5,6].filter(d=>{
     const b=document.getElementById("rday"+d);
@@ -3189,7 +3196,7 @@ function saveTask(){
     name,
     priority:document.getElementById("taskPriority").value,
     project:document.getElementById("taskProject").value.trim(),
-    due:document.getElementById("taskDue").value,
+    due:document.getElementById("taskDue").value||computeRecurDue(document.getElementById("taskRecurring").value,getSelectedRecurDays()),
     parent:(document.getElementById("taskParent")||{value:""}).value.trim(),
     recurring:document.getElementById("taskRecurring").value,
     goalLink:(document.getElementById("taskGoalLink")||{value:""}).value,
@@ -7027,6 +7034,16 @@ function saveTasks(){
 }
 
 // INIT — ma'lumotlarni sanitize qilish
+if(Array.isArray(tasks)){
+  let _fixedRecurDue=false;
+  tasks.forEach(function(t){
+    if(t.recurring==="custom"&&t.recurringDays&&t.recurringDays.length>0&&!t.due){
+      t.due=computeRecurDue("custom",t.recurringDays);
+      _fixedRecurDue=true;
+    }
+  });
+  if(_fixedRecurDue){ localStorage.setItem("tasks",JSON.stringify(tasks)); fbMarkDirty(["tasks"]); }
+}
 if(!Array.isArray(incomeData.entries)) incomeData.entries = [];
 if(!Array.isArray(karmaData.history)) karmaData.history = [];
 if(!Array.isArray(xarajatData.entries)) xarajatData.entries = [];
