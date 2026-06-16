@@ -3283,6 +3283,10 @@ function toggleTask(id){
     if(t.isMIT) pts += 5;
     addKarma(pts, t.name.substring(0,25));
   }
+  if(t.ytChannelId){
+    const ch=channels.find(c=>c.id===t.ytChannelId);
+    if(ch){ if(t.done) incrementChannelUpload(ch.id); else decrementChannelUpload(ch.id); }
+  }
   // Handle recurring
   if(t.done && t.recurring){
     const now=new Date();
@@ -4007,6 +4011,7 @@ function saveChannel(){
     channels.push(ch);
   }
   saveChannels();
+  generateYoutubeTasks();
   closeModal("channelModal");
   renderYoutube();
 }
@@ -4014,12 +4019,68 @@ function saveChannel(){
 function deleteChannel(id){
   if(!confirm("Kanalni o'chirasizmi?"))return;
   channels=channels.filter(x=>x.id!==id);
-  saveChannels(); renderYoutube();
+  tasks=tasks.filter(t=>t.ytChannelId!==id||t.done);
+  saveChannels(); saveTasks(); renderYoutube();
 }
 
 function toggleMonetized(id){
   const ch=channels.find(x=>x.id===id);
   if(ch){ch.monetized=!ch.monetized;saveChannels();renderYoutube();}
+}
+
+function generateYoutubeTasks(){
+  const todayStr=getTodayStr();
+  let added=false;
+  channels.forEach(function(ch){
+    const target=ch.dailyTarget||0;
+    if(target<=0) return;
+    const existing=tasks.filter(t=>t.ytChannelId===ch.id&&t.due===todayStr).length;
+    for(let i=existing;i<target;i++){
+      tasks.push({
+        id:"t"+Date.now()+"_"+ch.id+"_"+i,
+        name:"🎬 "+ch.name+" uchun video tayyorla",
+        priority:"med",
+        project:"YouTube",
+        due:todayStr,
+        ytChannelId:ch.id,
+        done:false,
+        created:todayStr,
+        subtasks:[]
+      });
+      added=true;
+    }
+  });
+  if(added) saveTasks();
+}
+
+let ytReportMode="week";
+function setYtReportMode(m){ytReportMode=m;renderYoutube();}
+
+function getChannelGrowth(ch,days){
+  if(!ch.history||ch.history.length===0) return 0;
+  const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-days);
+  const cutoffStr=cutoff.toISOString().split("T")[0];
+  const last=ch.history[ch.history.length-1];
+  let baseline=ch.history[0];
+  for(let i=0;i<ch.history.length;i++){
+    if(ch.history[i].date<=cutoffStr) baseline=ch.history[i];
+    else break;
+  }
+  return last.subs-baseline.subs;
+}
+
+function getYtReportStats(mode){
+  const days=mode==="month"?30:7;
+  const todayD=new Date();
+  const periodDays=[];
+  for(let i=0;i<days;i++){const d=new Date(todayD);d.setDate(todayD.getDate()-i);periodDays.push(d.toISOString().split("T")[0]);}
+  let totalVideos=0,totalIncome=0,totalGrowth=0;
+  channels.forEach(function(ch){
+    if(ch.uploadLog){ periodDays.forEach(function(d){ totalVideos+=ch.uploadLog[d]||0; }); }
+    if(Array.isArray(ch.history)){ ch.history.forEach(function(h){ if(periodDays.includes(h.date)) totalIncome+=h.income||0; }); }
+    totalGrowth+=getChannelGrowth(ch,days);
+  });
+  return {totalVideos,totalIncome,totalGrowth};
 }
 
 function getChannelUploadToday(ch){
@@ -4112,6 +4173,32 @@ function renderYoutube(){
     </div>`;
     return;
   }
+
+  // Haftalik/oylik umumiy hisobot
+  const ytStats=getYtReportStats(ytReportMode);
+  const reportHtml=`<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:18px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-family:'Unbounded',sans-serif;font-size:15px;font-weight:900;color:var(--purple)">📊 UMUMIY HISOBOT</div>
+      <div style="display:flex;gap:4px;background:var(--gb);border-radius:8px;padding:3px">
+        <button onclick="setYtReportMode('week')" style="padding:5px 12px;border-radius:6px;border:none;cursor:pointer;font-size:10px;font-weight:700;background:${ytReportMode==="week"?"var(--purple)":"transparent"};color:${ytReportMode==="week"?"#fff":"var(--muted)"}">Hafta</button>
+        <button onclick="setYtReportMode('month')" style="padding:5px 12px;border-radius:6px;border:none;cursor:pointer;font-size:10px;font-weight:700;background:${ytReportMode==="month"?"var(--purple)":"transparent"};color:${ytReportMode==="month"?"#fff":"var(--muted)"}">Oy</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+      <div style="background:var(--gb);border:1px solid var(--gbd);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:900;color:var(--green)">${ytStats.totalVideos}</div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px">VIDEO YUKLANDI</div>
+      </div>
+      <div style="background:var(--gb);border:1px solid var(--gbd);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:900;color:var(--yellow)">$${ytStats.totalIncome.toFixed(0)}</div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px">DAROMAD</div>
+      </div>
+      <div style="background:var(--gb);border:1px solid var(--gbd);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:900;color:var(--blue)">${ytStats.totalGrowth>=0?"+":""}${ytStats.totalGrowth}</div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px">YANGI OBUNACHI</div>
+      </div>
+    </div>
+  </div>`;
 
   // Bugungi video rejasi — barcha kanallar bo'yicha checklist
   const targetChannels=channels.filter(ch=>(ch.dailyTarget||0)>0);
@@ -4239,6 +4326,7 @@ function renderYoutube(){
     <div style="font-family:'Unbounded',sans-serif;font-size:16px;font-weight:900;color:var(--text)">📺 KANALLARIM</div>
     <button onclick="openChannelModal()" style="padding:8px 14px;background:var(--green);color:#000;border:none;border-radius:8px;font-family:'Unbounded',sans-serif;font-size:10px;font-weight:700;cursor:pointer">+ KANAL</button>
   </div>
+  ${reportHtml}
   ${planHtml}
   ${cardsHtml}
   <button class="yt-add-btn" onclick="openChannelModal()">+ YANGI KANAL QO'SHISH</button>`;
@@ -5024,6 +5112,22 @@ function checkSleepReminder(){
   }
 }
 setInterval(checkSleepReminder, 60000);
+
+function checkYoutubeReminder(){
+  if(Notification.permission!=="granted") return;
+  const now=new Date();
+  if(now.getHours()<20) return;
+  const todayStr=getTodayStr();
+  if(localStorage.getItem("ytReminderDate")===todayStr) return;
+  const pending=channels.filter(ch=>(ch.dailyTarget||0)>0&&getChannelUploadToday(ch)<ch.dailyTarget);
+  if(pending.length===0) return;
+  new Notification("🎬 Video yuklanmagan kanallar bor!", {
+    body: pending.map(ch=>ch.name+" ("+getChannelUploadToday(ch)+"/"+ch.dailyTarget+")").join(", ")
+  });
+  playSound("alert");
+  localStorage.setItem("ytReminderDate", todayStr);
+}
+setInterval(checkYoutubeReminder, 60000);
 
 // ============================================================
 // 🌐 GLOBAL CLICK SOUND
@@ -6984,7 +7088,7 @@ function fbApplyData(data){
   if(!Array.isArray(incomeData.entries)) incomeData.entries = [];
   if(!Array.isArray(myGoals)) myGoals = [];
   if(!Array.isArray(channels)) channels = [];
-  channels.forEach(function(ch){ if(!Array.isArray(ch.history)) ch.history = []; });
+  channels.forEach(function(ch){ if(!Array.isArray(ch.history)) ch.history = []; if(!ch.uploadLog) ch.uploadLog = {}; });
   if(!sleepData || !Array.isArray(sleepData.history)) sleepData = {history:[]};
   if(!Array.isArray(reviewData)) reviewData = [];
   if(!karmaData || typeof karmaData !== "object") karmaData = {total:0, history:[]};
@@ -7012,6 +7116,7 @@ function fbPull(){
   .then(function(data){
     if(!data){ fbSetStatus("ok"); return; }
     fbApplyData(data);
+    generateYoutubeTasks();
     fbSetStatus("ok");
     var ae = document.activeElement;
     var isTyping = ae && (ae.tagName==="INPUT"||ae.tagName==="TEXTAREA");
@@ -7201,7 +7306,7 @@ if(!Array.isArray(karmaData.history)) karmaData.history = [];
 if(!Array.isArray(xarajatData.entries)) xarajatData.entries = [];
 if(!sleepData || !Array.isArray(sleepData.history)) sleepData = {history:[]};
 if(!Array.isArray(channels)) channels = [];
-channels.forEach(function(ch){ if(!Array.isArray(ch.history)) ch.history = []; });
+channels.forEach(function(ch){ if(!Array.isArray(ch.history)) ch.history = []; if(!ch.uploadLog) ch.uploadLog = {}; });
 if(state && typeof state === "object"){
   Object.keys(state).forEach(function(k){
     if(!state[k]) state[k] = {};
@@ -7211,6 +7316,7 @@ if(state && typeof state === "object"){
 
 const lb=document.getElementById('langBtn');if(lb)lb.textContent=lang.toUpperCase();
 updateKarmaUI();
+generateYoutubeTasks();
 goPage('mygoals');
 setTimeout(fbPull, 2000);
 fetchNamozTimes();
