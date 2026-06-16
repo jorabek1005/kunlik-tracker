@@ -6860,7 +6860,7 @@ function fbApplyData(data){
 }
 
 function fbPull(){
-  if(fbSyncTimer) return;
+  if(fbSyncTimer || fbSyncing || fbPendingSync) return;
   var uid = getFbUserId();
   if(!uid || !navigator.onLine) return;
   fbSetStatus("syncing");
