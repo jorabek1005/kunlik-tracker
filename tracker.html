@@ -1274,6 +1274,11 @@
   <div id="reviewContent"></div>
 </div>
 
+<!-- WEEKLY PLAN -->
+<div class="page" id="page-weekly">
+  <div id="weeklyContent"></div>
+</div>
+
 <!-- YOUTUBE -->
 <div class="page" id="page-youtube">
   <div id="youtubeContent"></div>
@@ -3390,7 +3395,8 @@ function toggleTask(id){
   t.done=!t.done;
   t.doneDate=t.done?getTodayStr():null;
   playSound(t.done ? "task_done" : "click");
-  if(t.done){
+  if(t.done && !t._karmaAwarded){
+    t._karmaAwarded = true;
     var pts = t.priority==="high"?10:t.priority==="med"?5:2;
     if(t.isMIT) pts += 5;
     addKarma(pts, t.name.substring(0,25));
@@ -4221,6 +4227,8 @@ function checkYoutubeDailyReset(){
     }
     ch.todayCount=0;
     ch.todayLiveCount=0;
+    ch._karmaVideoToday=false;
+    ch._karmaLiveToday=false;
     ch.lastResetDate=todayStr;
     changed=true;
   });
@@ -4976,7 +4984,10 @@ function incrementChannelUpload(id, fromTaskToggle){
   if(!wasComplete&&nowComplete){
     ch.streak=prevStreak+1;
     ch.longestStreak=Math.max(prevLongest,ch.streak);
-    addKarma(10,ch.name+": kunlik video maqsadi bajarildi");
+    if(!ch._karmaVideoToday){
+      ch._karmaVideoToday=true;
+      addKarma(10,ch.name+": kunlik video maqsadi bajarildi");
+    }
     _ytPulseId=ch.id;
   }
   let autoCompletedTask=null;
@@ -5021,7 +5032,10 @@ function incrementLive(id){
   const nowDone=ch.todayLiveCount>=target;
   const wasDone=prev>=target;
   if(!wasDone&&nowDone){
-    addKarma(10,ch.name+": kunlik efir maqsadi bajarildi");
+    if(!ch._karmaLiveToday){
+      ch._karmaLiveToday=true;
+      addKarma(10,ch.name+": kunlik efir maqsadi bajarildi");
+    }
     _ytPulseId=ch.id;
   }
   var todayStr=getTodayStr();
