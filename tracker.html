@@ -662,6 +662,7 @@
   .yt2-card.status-pending::before   { background: var(--border2); }
   .yt2-card.pulse { animation: yt2pulse 0.5s ease; }
   @keyframes yt2pulse { 0%{transform:scale(1);} 40%{transform:scale(1.025);} 100%{transform:scale(1);} }
+  @keyframes timeOverduePulse { 0%{opacity:1;} 50%{opacity:0.7;} 100%{opacity:1;} }
   .yt2-badge { font-size:10px; font-weight:800; padding:3px 9px; border-radius:20px; letter-spacing:0.3px; }
   .yt2-badge.status-completed { background:rgba(74,222,128,0.15); color:#4ade80; }
   .yt2-badge.status-progress  { background:rgba(250,204,21,0.15); color:#facc15; }
@@ -3462,9 +3463,12 @@ function renderTasks(){
   const priorityColor = {high:"var(--red)", med:"var(--yellow)", low:"var(--green)"};
 
   // Tabs
+  function isTimedOverdueFromYesterday(t){
+    return !t.done && !t.due && t.taskTime && t.created && t.created < todayStr;
+  }
   const tabDefs = [
-    {v:"today",   label:"Bugun",    cls:"",             count: tasks.filter(t=>!t.done&&(!t.due||t.due===todayStr)).length},
-    {v:"overdue", label:"O'tgan",   cls:"tab-overdue",  count: tasks.filter(t=>!t.done&&t.due&&t.due<todayStr).length},
+    {v:"today",   label:"Bugun",    cls:"",             count: tasks.filter(t=>!t.done&&(!t.due||t.due===todayStr)&&!isTimedOverdueFromYesterday(t)).length},
+    {v:"overdue", label:"O'tgan",   cls:"tab-overdue",  count: tasks.filter(t=>!t.done&&((t.due&&t.due<todayStr)||isTimedOverdueFromYesterday(t))).length},
     {v:"planned", label:"Rejalashtirilgan", cls:"",     count: tasks.filter(t=>!t.done&&t.due&&t.due>todayStr).length},
     {v:"done",    label:"Bajarildi",cls:"",             count: tasks.filter(t=>t.done&&t.doneDate===todayStr).length},
   ];
@@ -3477,8 +3481,8 @@ function renderTasks(){
 
   // Filter & sort
   let filtered = [];
-  if(taskView==="today")   filtered = tasks.filter(t=>!t.done&&(!t.due||t.due===todayStr));
-  else if(taskView==="overdue") filtered = tasks.filter(t=>!t.done&&t.due&&t.due<todayStr);
+  if(taskView==="today")   filtered = tasks.filter(t=>!t.done&&(!t.due||t.due===todayStr)&&!isTimedOverdueFromYesterday(t));
+  else if(taskView==="overdue") filtered = tasks.filter(t=>!t.done&&((t.due&&t.due<todayStr)||isTimedOverdueFromYesterday(t)));
   else if(taskView==="planned") filtered = tasks.filter(t=>!t.done&&t.due&&t.due>todayStr);
   else if(taskView==="done")    filtered = tasks.filter(t=>t.done&&t.doneDate===todayStr);
   else filtered = tasks.filter(t=>!t.done);
@@ -3519,27 +3523,35 @@ function renderTasks(){
 
     // Due date + time — katta va yaqqol
     let dueDateHtml = "";
+    const nowHHMM = new Date().getHours()*60 + new Date().getMinutes();
+    const isTimeOverdue = !t.done && t.taskTime && (t.due === todayStr || !t.due) && (function(){
+      const p = t.taskTime.split(":"); return parseInt(p[0])*60 + parseInt(p[1]) < nowHHMM;
+    })();
     if(t.due){
       const overdue = t.due < todayStr;
       const planned = t.due > todayStr;
       const [y,mo,d] = t.due.split("-");
       const dateStr = d+"."+mo+"."+y;
       const timeStr = t.taskTime || "";
-      const bgColor = overdue ? "rgba(255,68,102,0.18)" : planned ? "rgba(77,159,255,0.15)" : "rgba(0,245,160,0.12)";
-      const txtColor = overdue ? "#ff6680" : planned ? "#60b0ff" : "#00f0a0";
-      const borderColor = overdue ? "rgba(255,68,102,0.45)" : planned ? "rgba(77,159,255,0.4)" : "rgba(0,245,160,0.35)";
+      const bgColor = overdue || isTimeOverdue ? "rgba(255,68,102,0.18)" : planned ? "rgba(77,159,255,0.15)" : "rgba(0,245,160,0.12)";
+      const txtColor = overdue || isTimeOverdue ? "#ff6680" : planned ? "#60b0ff" : "#00f0a0";
+      const borderColor = overdue || isTimeOverdue ? "rgba(255,68,102,0.45)" : planned ? "rgba(77,159,255,0.4)" : "rgba(0,245,160,0.35)";
+      const timeIcon = isTimeOverdue ? "⏰" : "🕐";
       dueDateHtml = `<div style="display:inline-flex;align-items:center;gap:6px;margin-top:7px;
         padding:5px 12px;border-radius:20px;
-        background:${bgColor};border:1px solid ${borderColor}">
-        <span style="font-size:13px">${overdue?"⚠️":planned?"📅":"✅"}</span>
+        background:${bgColor};border:1px solid ${borderColor}${isTimeOverdue?";animation:timeOverduePulse 2s ease-in-out infinite":""}">
+        <span style="font-size:13px">${overdue?"⚠️":isTimeOverdue?"⏰":planned?"📅":"✅"}</span>
         <span style="font-size:14px;font-weight:800;color:${txtColor}">${dateStr}</span>
-        ${timeStr?`<span style="font-size:13px;font-weight:700;color:${txtColor};opacity:0.9">🕐 ${timeStr}</span>`:""}
+        ${timeStr?`<span style="font-size:13px;font-weight:700;color:${isTimeOverdue?"#ff4466":txtColor};${isTimeOverdue?"":"opacity:0.9"}">${timeIcon} ${timeStr}${isTimeOverdue?" — vaqti o'tdi!":""}</span>`:""}
       </div>`;
     } else if(t.taskTime){
+      const timeBg = isTimeOverdue ? "rgba(255,68,102,0.18)" : "rgba(77,159,255,0.12)";
+      const timeBorder = isTimeOverdue ? "rgba(255,68,102,0.45)" : "rgba(77,159,255,0.35)";
+      const timeClr = isTimeOverdue ? "#ff4466" : "#60b0ff";
       dueDateHtml = `<div style="display:inline-flex;align-items:center;gap:6px;margin-top:7px;
         padding:5px 12px;border-radius:20px;
-        background:rgba(77,159,255,0.12);border:1px solid rgba(77,159,255,0.35)">
-        <span style="font-size:14px;font-weight:800;color:#60b0ff">🕐 ${t.taskTime}</span>
+        background:${timeBg};border:1px solid ${timeBorder}${isTimeOverdue?";animation:timeOverduePulse 2s ease-in-out infinite":""}">
+        <span style="font-size:14px;font-weight:800;color:${timeClr}">${isTimeOverdue?"⏰":"🕐"} ${t.taskTime}${isTimeOverdue?" — vaqti o'tdi!":""}</span>
       </div>`;
     }
 
@@ -8173,6 +8185,10 @@ window.addEventListener("offline", function(){
 if(!getFbUserId()) setTimeout(fbEnsureUserId, 1500);
 
 setInterval(fbPull, 10000);
+
+setInterval(function(){
+  if(currentPage==="tasks") renderTasks();
+}, 60000);
 
 // Desktop: sahifa yopilganda sync XHR
 window.addEventListener("beforeunload", function(){
