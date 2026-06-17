@@ -7937,7 +7937,7 @@ function fbGetData(){
     customHabits: customHabits,
     incomeData: incomeData,
     myGoals: myGoals,
-    ytChannels: channels.map(function(ch){var c=Object.assign({},ch);delete c.ytApiKey;return c;}),
+    ytChannels: channels,
     pomoHistory: pomoHistory,
     sleepData: sleepData,
     weeklyData: weeklyData,
@@ -8008,13 +8008,7 @@ function fbApplyData(data){
   if(data.customHabits) { customHabits = data.customHabits; localStorage.setItem("customHabits", JSON.stringify(customHabits)); }
   if(data.incomeData)   { incomeData = data.incomeData; localStorage.setItem("incomeData", JSON.stringify(incomeData)); }
   if(data.myGoals)      { myGoals = data.myGoals; localStorage.setItem("myGoals", JSON.stringify(myGoals)); }
-  if(data.ytChannels)   {
-    var localKeys={};
-    channels.forEach(function(c){if(c.ytApiKey)localKeys[c.id]=c.ytApiKey;});
-    channels = data.ytChannels;
-    channels.forEach(function(c){if(!c.ytApiKey&&localKeys[c.id])c.ytApiKey=localKeys[c.id];});
-    localStorage.setItem("ytChannels", JSON.stringify(channels));
-  }
+  if(data.ytChannels)   { channels = data.ytChannels; localStorage.setItem("ytChannels", JSON.stringify(channels)); }
   if(data.pomoHistory)  { pomoHistory = data.pomoHistory; localStorage.setItem("pomoHistory", JSON.stringify(pomoHistory)); }
   if(data.sleepData)    { sleepData = data.sleepData; localStorage.setItem("sleepData", JSON.stringify(sleepData)); }
   if(data.weeklyData)   { weeklyData = data.weeklyData; localStorage.setItem("weeklyData", JSON.stringify(weeklyData)); }
