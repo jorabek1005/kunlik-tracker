@@ -7985,13 +7985,14 @@ function fbPush(){
   fbPendingSync = false;
   fbSetStatus("syncing");
 
+  var pushTime = allData._savedAt;
   fetch(FB_DB + "/users/" + uid + ".json", {
     method: "PATCH",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify(payload)
   }).then(function(r){
     fbSyncing = false;
-    if(r.ok){ fbSetStatus("ok"); }
+    if(r.ok){ fbLastPulledAt = pushTime; fbSetStatus("ok"); }
     else { fbPendingSync = true; fbSetStatus("error"); }
   }).catch(function(){
     fbSyncing = false;
@@ -8054,8 +8055,11 @@ if(!Array.isArray(pomoHistory)) pomoHistory = [];
   }
 }
 
+var fbLastPulledAt = 0;
+
 function fbPull(){
   if(fbSyncTimer || fbSyncing || fbPendingSync) return;
+  if(Object.keys(fbDirtyFields).length > 0) return;
   var uid = getFbUserId();
   if(!uid || !navigator.onLine) return;
   fbSetStatus("syncing");
@@ -8063,6 +8067,13 @@ function fbPull(){
   .then(function(r){ return r.json(); })
   .then(function(data){
     if(!data){ fbSetStatus("ok"); return; }
+    var remoteSavedAt = data._savedAt || 0;
+    var localSavedAt = fbLastPulledAt;
+    if(remoteSavedAt <= localSavedAt){
+      fbSetStatus("ok");
+      return;
+    }
+    fbLastPulledAt = remoteSavedAt;
     fbApplyData(data);
     migrateYoutubeSchema();
     checkYoutubeDailyReset();
@@ -8127,6 +8138,7 @@ function saveSyncCode(){
     .then(function(r){ return r.json(); })
     .then(function(data){
       if(data){
+        fbLastPulledAt = data._savedAt || Date.now();
         fbApplyData(data);
         fbSetStatus("ok");
         renderPage(currentPage);
