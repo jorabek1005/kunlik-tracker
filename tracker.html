@@ -1157,23 +1157,27 @@
     <button class="drawer-close" onclick="closeDrawer()">✕</button>
   </div>
   <div class="drawer-section">
-    <div class="drawer-section-title">Main</div>
-    <button class="drawer-item" onclick="goPage('stats');closeDrawer()"><div class="drawer-item-icon">📊</div>Productivity</button>
+    <div class="drawer-section-title">Asosiy</div>
     <button class="drawer-item" onclick="goPage('tasks');closeDrawer()"><div class="drawer-item-icon">📋</div>Tasks</button>
     <button class="drawer-item" onclick="goPage('today');closeDrawer()"><div class="drawer-item-icon">✅</div>Habits</button>
+    <button class="drawer-item" onclick="goPage('youtube');closeDrawer()"><div class="drawer-item-icon">📺</div>YouTube</button>
     <button class="drawer-item" onclick="goPage('namoz');closeDrawer()"><div class="drawer-item-icon">🕌</div>Prayer Times</button>
-    <button class="drawer-item" onclick="goPage('sleep');closeDrawer()"><div class="drawer-item-icon">😴</div>Sleep</button>
-    <button class="drawer-item" onclick="goPage('timer');closeDrawer()"><div class="drawer-item-icon">⏱</div>Pomodoro Timer</button>
+    <button class="drawer-item" onclick="goPage('stats');closeDrawer()"><div class="drawer-item-icon">📊</div>Productivity</button>
   </div>
   <div class="drawer-section">
-    <div class="drawer-section-title">Planning</div>
+    <div class="drawer-section-title">Vaqt & Odat</div>
+    <button class="drawer-item" onclick="goPage('timer');closeDrawer()"><div class="drawer-item-icon">⏱</div>Pomodoro Timer</button>
+    <button class="drawer-item" onclick="goPage('sleep');closeDrawer()"><div class="drawer-item-icon">😴</div>Sleep</button>
+    <button class="drawer-item" onclick="goPage('weekly');closeDrawer()"><div class="drawer-item-icon">🗓</div>Weekly Plan</button>
+  </div>
+  <div class="drawer-section">
+    <div class="drawer-section-title">Reja & Maqsad</div>
     <button class="drawer-item" onclick="goPage('review');closeDrawer()"><div class="drawer-item-icon">🔍</div>Weekly Review</button>
     <button class="drawer-item" onclick="goPage('mygoals');closeDrawer()"><div class="drawer-item-icon">🏆</div>My Goals</button>
     <button class="drawer-item" onclick="goPage('goals');closeDrawer()"><div class="drawer-item-icon">🚀</div>My Missions</button>
   </div>
   <div class="drawer-section">
-    <div class="drawer-section-title">Finance</div>
-    <button class="drawer-item" onclick="goPage('youtube');closeDrawer()"><div class="drawer-item-icon">📺</div>YouTube</button>
+    <div class="drawer-section-title">Moliya</div>
     <button class="drawer-item" onclick="goPage('income');closeDrawer()"><div class="drawer-item-icon">💰</div>Income</button>
     <button class="drawer-item" onclick="goPage('xarajat');closeDrawer()"><div class="drawer-item-icon">💸</div>Expenses</button>
   </div>
@@ -1211,7 +1215,7 @@
 <div class="bottom-nav" style="justify-content:space-around">
   <button class="bnav-btn" id="bnav-tasks" onclick="goPage('tasks')"><span>📋</span>Tasks</button>
   <button class="bnav-btn" id="bnav-today" onclick="goPage('today')"><span>✅</span>Habits</button>
-  <button class="bnav-btn" id="bnav-stats" onclick="goPage('stats')"><span>📊</span>Progress</button>
+  <button class="bnav-btn" id="bnav-youtube" onclick="goPage('youtube')"><span>📺</span>YouTube</button>
   <button class="bnav-btn" id="bnav-namoz" onclick="goPage('namoz')"><span>🕌</span>Prayer</button>
   <button class="bnav-btn" id="bnav-more" onclick="toggleDrawer()"><span>☰</span>More</button>
 </div>
