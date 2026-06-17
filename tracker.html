@@ -3096,6 +3096,7 @@ function addCustomHabit(){
   if(!name)return;
   customHabits.push({id:"custom_"+Date.now(),icon,name,desc,custom:true});
   localStorage.setItem("customHabits",JSON.stringify(customHabits));
+  fbMarkDirty(["customHabits"]); fbSchedule();
   playSound("add");
   closeModal("habitModal");
   document.getElementById("habitIcon").value="";
@@ -3194,7 +3195,7 @@ let taskSort = "priority"; // priority | project | created
 let editingTaskId = null;
 let weeklyData = JSON.parse(localStorage.getItem("weeklyData") || "{}");
 
-function saveTasks(){localStorage.setItem("tasks",JSON.stringify(tasks));fbSchedule();}
+function saveTasks(){localStorage.setItem("tasks",JSON.stringify(tasks));fbMarkDirty(["tasks"]);fbSchedule();}
 
 function getTodayStr(){return new Date().toISOString().split("T")[0];}
 
@@ -3375,6 +3376,7 @@ function setFrogTask(id){
   // isFrog ni tasks ichiga saqlash — tasks sync bilan birga sinxronlanadi
   tasks.forEach(function(t){ t.isFrog = (t.id === id && !!id); });
   localStorage.setItem("frogTaskId", id);
+  fbMarkDirty(["frogTaskId"]);
   saveTasks();
 }
 function toggleTask(id){
@@ -8184,6 +8186,7 @@ window.addEventListener("beforeunload", function(){
       var payload = dirtyKeys.length > 0 ? {} : allData;
       if(dirtyKeys.length > 0) dirtyKeys.forEach(function(k){ payload[k] = allData[k]; });
       fbDirtyFields = {};
+      fbLastPulledAt = allData._savedAt;
       var xhr = new XMLHttpRequest();
       xhr.open("PATCH", FB_DB + "/users/" + uid + ".json", false);
       xhr.setRequestHeader("Content-Type", "application/json");
@@ -8205,6 +8208,7 @@ document.addEventListener("visibilitychange", function(){
       var payload = dirtyKeys.length > 0 ? {} : allData;
       if(dirtyKeys.length > 0) dirtyKeys.forEach(function(k){ payload[k] = allData[k]; });
       fbDirtyFields = {};
+      fbLastPulledAt = allData._savedAt;
       fetch(FB_DB + "/users/" + uid + ".json", {
         method: "PATCH",
         headers: {"Content-Type": "application/json"},
