@@ -1367,6 +1367,12 @@
       <option value="single">Single — bitta video = bitta topshiriq</option>
       <option value="multi-step">Multi-step — ssenariy → yozish → edit → yuklash</option>
     </select>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Kuniga nechta jonli efir (loop/live):</div>
+    <input class="modal-input" id="chDailyLive" type="number" min="0" max="20" placeholder="0" value="0">
+    <div style="font-size:11px;color:var(--muted);margin-bottom:6px">YouTube API kalit (statistika uchun, ixtiyoriy):</div>
+    <input class="modal-input" id="chYtApiKey" type="password" placeholder="AIza... (ixtiyoriy)">
+    <div style="font-size:11px;color:var(--muted);margin-bottom:6px">YouTube Channel ID (UC... bilan boshlanadi):</div>
+    <input class="modal-input" id="chYtChannelId" placeholder="UCxxxxx... (ixtiyoriy)">
     <div class="modal-row">
       <button class="modal-btn cancel" onclick="closeModal('channelModal')">Cancel</button>
       <button class="modal-btn confirm" onclick="saveChannel()">Save</button>
@@ -3541,6 +3547,7 @@ function renderTasks(){
     if(!t.isMIT && t.priority) chips.push(`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;background:${pr.tag};color:${pr.tagTxt}">${prLabels[t.priority]||t.priority}</span>`);
     if(t.recurring){const dayNames=["Ya","Du","Se","Chor","Pay","Ju","Sha"];const recurLabel=t.recurring==="custom"&&t.recurringDays&&t.recurringDays.length>0?"🔄 "+(t.recurringDays.map(d=>dayNames[d]).join(", ")):"🔄 "+t.recurring;chips.push(`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(77,159,255,0.12);color:var(--blue)">${recurLabel}</span>`);}
     if(t.project)   chips.push(`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(167,139,250,0.12);color:var(--purple)"># ${t.project}</span>`);
+    if(t.type==="youtube-live") chips.push(`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(255,68,102,0.15);color:#ff4466">🔴 LIVE</span>`);
     if(subtasksTotal) chips.push(`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(128,128,128,0.12);color:var(--muted)">${subtasksDone}/${subtasksTotal} subtask</span>`);
 
     const chipsHtml = `${dueDateHtml}${chips.length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">${chips.join("")}</div>`:""}`;
@@ -4155,6 +4162,9 @@ function migrateYoutubeSchema(){
     ch.watchHoursGoal = ch.watchHoursGoal||4000;
     ch.averageMinutesPerVideo = ch.averageMinutesPerVideo||15;
     ch.workflowType = ch.workflowType||"single";
+    ch.dailyLiveStreams = ch.dailyLiveStreams||0;
+    ch.ytApiKey = ch.ytApiKey||"";
+    ch.ytChannelId = ch.ytChannelId||"";
     ch.order = ch.order!=null?ch.order:channels.indexOf(ch);
     ch.createdAt = ch.created||ch.createdAt||getTodayStr();
     ch._schemaV2 = true;
@@ -4317,6 +4327,9 @@ function openChannelModal(id){
     document.getElementById("chWatchGoal").value=ch.watchHoursGoal!=null?ch.watchHoursGoal:4000;
     document.getElementById("chStatus").value=ch.status||"active";
     document.getElementById("chWorkflow").value=ch.workflowType||"single";
+    document.getElementById("chDailyLive").value=ch.dailyLiveStreams||0;
+    document.getElementById("chYtApiKey").value=ch.ytApiKey||"";
+    document.getElementById("chYtChannelId").value=ch.ytChannelId||"";
   } else {
     document.getElementById("channelModalTitle").textContent="📺 Yangi kanal";
     document.getElementById("chName").value="";
@@ -4328,6 +4341,9 @@ function openChannelModal(id){
     document.getElementById("chWatchGoal").value=4000;
     document.getElementById("chStatus").value="active";
     document.getElementById("chWorkflow").value="single";
+    document.getElementById("chDailyLive").value=0;
+    document.getElementById("chYtApiKey").value="";
+    document.getElementById("chYtChannelId").value="";
   }
   openModal("channelModal");
 }
@@ -4348,6 +4364,9 @@ function saveChannel(){
     watchHoursGoal:parseInt(document.getElementById("chWatchGoal").value)||4000,
     status:document.getElementById("chStatus").value,
     workflowType:document.getElementById("chWorkflow").value,
+    dailyLiveStreams:parseInt(document.getElementById("chDailyLive").value)||0,
+    ytApiKey:document.getElementById("chYtApiKey").value.trim(),
+    ytChannelId:document.getElementById("chYtChannelId").value.trim(),
     monetized:false,
     history:[],
     uploadLog:{},
@@ -4369,7 +4388,9 @@ function saveChannel(){
     const idx=channels.findIndex(x=>x.id===editingChannelId);
     if(idx>=0){
       const old=channels[idx];
-      ch.monetized=old.monetized; ch.history=old.history||[]; ch.uploadLog=old.uploadLog||{};
+      ch.monetized=old.monetized; ch.dailyLiveStreams=parseInt(document.getElementById("chDailyLive").value)||0;
+      ch.ytApiKey=document.getElementById("chYtApiKey").value.trim(); ch.ytChannelId=document.getElementById("chYtChannelId").value.trim();
+      ch.history=old.history||[]; ch.uploadLog=old.uploadLog||{};
       ch.todayCount=old.todayCount||0; ch.lastResetDate=old.lastResetDate||getTodayStr();
       ch.streak=old.streak||0; ch.longestStreak=old.longestStreak||0;
       ch.uploadHistory=old.uploadHistory||[]; ch.videoBank=old.videoBank||[]; ch.notes=old.notes||"";
@@ -4416,6 +4437,95 @@ function togglePauseChannel(id){
 function toggleMonetized(id){
   const ch=channels.find(x=>x.id===id);
   if(ch){ch.monetized=!ch.monetized;saveChannels();renderYoutube();}
+}
+
+function fetchYtStats(id){
+  const ch=channels.find(x=>x.id===id);
+  if(!ch) return;
+  if(!ch.ytApiKey||!ch.ytChannelId){
+    alert("Avval kanal sozlamalarida YouTube API kalit va Channel ID ni kiriting.\n\n1. Google Cloud Console → API & Services → Credentials → Create API Key\n2. YouTube Data API v3 ni yoqing\n3. Channel ID: YouTube kanalingiz → About → Share → Channel ID nusxalang");
+    return;
+  }
+  const btn=event&&event.target;
+  if(btn){btn.textContent="⏳...";btn.disabled=true;}
+  fetch("https://www.googleapis.com/youtube/v3/channels?part=statistics,snippet&id="+encodeURIComponent(ch.ytChannelId)+"&key="+encodeURIComponent(ch.ytApiKey))
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(data.error){
+        alert("YouTube API xato: "+(data.error.message||JSON.stringify(data.error)));
+        return;
+      }
+      if(!data.items||data.items.length===0){
+        alert("Kanal topilmadi. Channel ID ni tekshiring: "+ch.ytChannelId);
+        return;
+      }
+      const stats=data.items[0].statistics;
+      const snippet=data.items[0].snippet;
+      const newSubs=parseInt(stats.subscriberCount)||0;
+      const newViews=parseInt(stats.viewCount)||0;
+      const newVideos=parseInt(stats.videoCount)||0;
+      ch.subCount=newSubs;
+      if(!Array.isArray(ch.history)) ch.history=[];
+      const todayStr=getTodayStr();
+      ch.history=ch.history.filter(function(h){return h.date!==todayStr;});
+      const lastEntry=ch.history[ch.history.length-1];
+      ch.history.push({
+        date:todayStr,
+        subs:newSubs,
+        views:newViews,
+        videos:newVideos,
+        income:lastEntry?lastEntry.income:0
+      });
+      ch.history.sort(function(a,b){return a.date.localeCompare(b.date);});
+      if(snippet&&snippet.title&&!ch._nameManual) ch.name=ch.name;
+      if(ch.monetized&&stats.hiddenSubscriberCount===false&&newSubs>=1000) ch.monetized=true;
+      saveChannels();
+      renderYoutube();
+      showYtSnackbar(ch.name+": "+newSubs+" obunachi, "+newViews+" ko'rish, "+newVideos+" video yangilandi ✓");
+    })
+    .catch(function(e){
+      alert("YouTube API ga ulanib bo'lmadi: "+e.message);
+    })
+    .finally(function(){
+      if(btn){btn.textContent="📊 Sync";btn.disabled=false;}
+    });
+}
+
+function fetchAllYtStats(){
+  var toFetch=channels.filter(function(ch){return ch.ytApiKey&&ch.ytChannelId;});
+  if(toFetch.length===0){
+    alert("Hech qaysi kanalda YouTube API kalit va Channel ID sozlanmagan.\n\nKanal tahrirlash → YouTube API kalit va Channel ID ni kiriting.");
+    return;
+  }
+  var done=0;
+  toFetch.forEach(function(ch){
+    fetch("https://www.googleapis.com/youtube/v3/channels?part=statistics&id="+encodeURIComponent(ch.ytChannelId)+"&key="+encodeURIComponent(ch.ytApiKey))
+      .then(function(r){return r.json();})
+      .then(function(data){
+        if(data.items&&data.items.length>0){
+          var stats=data.items[0].statistics;
+          var newSubs=parseInt(stats.subscriberCount)||0;
+          var newViews=parseInt(stats.viewCount)||0;
+          var newVideos=parseInt(stats.videoCount)||0;
+          ch.subCount=newSubs;
+          if(!Array.isArray(ch.history)) ch.history=[];
+          var todayStr=getTodayStr();
+          ch.history=ch.history.filter(function(h){return h.date!==todayStr;});
+          var lastEntry=ch.history[ch.history.length-1];
+          ch.history.push({date:todayStr,subs:newSubs,views:newViews,videos:newVideos,income:lastEntry?lastEntry.income:0});
+          ch.history.sort(function(a,b){return a.date.localeCompare(b.date);});
+        }
+      })
+      .catch(function(){})
+      .finally(function(){
+        done++;
+        if(done>=toFetch.length){
+          saveChannels();
+          renderYoutube();
+          showYtSnackbar(done+" ta kanal statistikasi yangilandi ✓");
+        }
+      });
+  });
 }
 
 // ══════════════════════════════════════════════════════
@@ -4485,7 +4595,10 @@ function renderChannelDetailPanel(){
     ${chart30Html}
 
     <div style="margin:18px 0">
-      <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:8px;letter-spacing:0.5px">MONETIZATSIYA</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:0.5px">MONETIZATSIYA</div>
+        <button class="yt-monetized ${ch.monetized?"yes":"no"}" onclick="toggleMonetized('${ch.id}');renderChannelDetailPanel();">${ch.monetized?"💰 Ulangan ✓":"💰 Ulanmagan"}</button>
+      </div>
       <div style="margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span>Obunachi</span><span>${ch.subCount||0}/${ch.subGoal||1000} (${subPct}%)</span></div>
         <div style="height:6px;background:var(--gb);border-radius:10px;overflow:hidden"><div style="height:100%;width:${subPct}%;background:#4ade80"></div></div>
@@ -4496,6 +4609,11 @@ function renderChannelDetailPanel(){
       </div>
       <div style="font-size:11px;color:var(--muted);margin-top:10px">Bu oy daromad: <b style="color:var(--text)">$${monthIncome.toFixed(0)}</b>${hoursThisMonth>0?" · Soatiga: <b style='color:var(--text)'>$"+revenuePerHour.toFixed(1)+"</b>":""}</div>
     </div>
+
+    ${(ch.dailyLiveStreams||0)>0?`<div style="margin:18px 0">
+      <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:8px;letter-spacing:0.5px">🔴 JONLI EFIRLAR</div>
+      <div style="font-size:12px;color:var(--text2)">Kunlik norma: <b style="color:var(--text)">${ch.dailyLiveStreams}</b> ta efir</div>
+    </div>`:""}
 
     <div style="margin:18px 0">
       <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:8px;letter-spacing:0.5px">SARFLANGAN VAQT (POMODORO)</div>
@@ -4516,7 +4634,8 @@ function renderChannelDetailPanel(){
       <textarea class="modal-input" id="ytNotesInput" rows="3" style="background:var(--bg)" oninput="saveChannelNotes('${ch.id}',this.value)">${ch.notes||""}</textarea>
     </div>
 
-    <div style="display:flex;gap:8px;margin-top:10px">
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button onclick="fetchYtStats('${ch.id}')" style="flex:1;padding:10px;background:transparent;border:1px solid var(--border2);color:var(--text2);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">📊 YouTube Sync</button>
       <button onclick="openChannelModal('${ch.id}')" style="flex:1;padding:10px;background:transparent;border:1px solid var(--border2);color:var(--text2);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">✏️ Tahrirlash</button>
       <button onclick="togglePauseChannel('${ch.id}');renderChannelDetailPanel();" style="flex:1;padding:10px;background:transparent;border:1px solid var(--border2);color:var(--text2);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">${ch.status==='paused'?'▶️ Davom ettir':'⏸ Pauza'}</button>
     </div>`;
@@ -4722,6 +4841,31 @@ function generateYoutubeTasks(){
         added=true;
       }
     }
+    // ── Jonli efir (live stream) topshiriqlari ──
+    const liveTarget=ch.dailyLiveStreams||0;
+    if(liveTarget>0){
+      const existingLive=tasks.filter(function(t){return t.ytChannelId===ch.id&&t.due===todayStr&&t.source==="auto"&&t.type==="youtube-live";}).length;
+      for(let li=existingLive;li<liveTarget;li++){
+        tasks.push({
+          id:"t"+Date.now()+"_"+ch.id+"_live_"+li,
+          name:ch.name+": jonli efir "+(li+1)+"/"+liveTarget,
+          priority:"high",
+          isMIT:true,
+          recurring:"daily",
+          project:"YouTube",
+          due:todayStr,
+          ytChannelId:ch.id,
+          videoIndex:li+1,
+          type:"youtube-live",
+          estimatedMinutes:60,
+          source:"auto",
+          done:false,
+          created:todayStr,
+          subtasks:[]
+        });
+        added=true;
+      }
+    }
   });
   if(added) saveTasks();
 }
@@ -4889,7 +5033,7 @@ function renderYt2Card(ch){
           <span style="font-size:16px">${nicheIcon}</span>
           <div style="font-weight:600;font-size:14px;color:var(--text)">${ch.name}</div>
         </div>
-        <div style="font-size:10px;color:var(--muted);margin-top:3px">${nicheLabel}${quota>0?" · Kunlik norma: "+quota+" video":""}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px">${nicheLabel}${quota>0?" · "+quota+" video/kun":""}${(ch.dailyLiveStreams||0)>0?" · "+ch.dailyLiveStreams+" efir/kun":""}</div>
       </div>
       <span class="yt2-badge status-${status}">${statusLabel}</span>
     </div>
@@ -4916,9 +5060,16 @@ function renderYt2Card(ch){
 
     ${getChannelHeatmapHtml(ch)}
 
-    ${ch.subGoal?`<div style="margin-top:10px;font-size:10px;color:var(--muted)">Monetizatsiya: ${ch.subCount||0}/${ch.subGoal} obunachi (${subPct}%)</div>`:""}
-
-    <button onclick="openChannelDetail('${ch.id}')" style="background:transparent;border:none;color:var(--blue);font-size:11px;font-weight:700;cursor:pointer;margin-top:10px;padding:0">Batafsil →</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;flex-wrap:wrap;gap:6px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="yt-monetized ${ch.monetized?"yes":"no"}" onclick="toggleMonetized('${ch.id}')">${ch.monetized?"💰 Monetizatsiya ✓":"💰 Monetizatsiya ✗"}</button>
+        ${ch.subGoal&&!ch.monetized?`<span style="font-size:10px;color:var(--muted)">${ch.subCount||0}/${ch.subGoal} (${subPct}%)</span>`:""}
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <button onclick="fetchYtStats('${ch.id}')" title="YouTube'dan statistikani yangilash" style="background:transparent;border:1px solid var(--border2);color:var(--text2);border-radius:8px;font-size:10px;padding:4px 8px;cursor:pointer">📊 Sync</button>
+        <button onclick="openChannelDetail('${ch.id}')" style="background:transparent;border:none;color:var(--blue);font-size:11px;font-weight:700;cursor:pointer;padding:0">Batafsil →</button>
+      </div>
+    </div>
   </div>`;
 }
 
@@ -4944,10 +5095,11 @@ function renderYoutube(){
   const heroHtml=`<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;flex-wrap:wrap;gap:10px">
     <div>
       <div style="font-family:'Unbounded',sans-serif;font-size:20px;font-weight:900;color:var(--text)">📺 YouTube</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:4px">${channels.length} ta kanal · Bugun ${totalDone}/${totalQuota} video · Eng uzun streak ${longestOverall} kun</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">${channels.length} ta kanal · Bugun ${totalDone}/${totalQuota} video${activeChannels.some(c=>c.dailyLiveStreams>0)?" · "+activeChannels.reduce((s,c)=>s+(c.dailyLiveStreams||0),0)+" efir":""} · Eng uzun streak ${longestOverall} kun</div>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="toggleYtReminders()" title="Eslatmalarni yoqish/o'chirish" style="padding:9px 11px;background:transparent;border:1px solid var(--border2);color:${getYtReminderEnabled()?"var(--text2)":"var(--muted)"};border-radius:8px;font-size:13px;cursor:pointer">${getYtReminderEnabled()?"🔔":"🔕"}</button>
+      <button onclick="fetchAllYtStats()" title="Barcha kanallar statistikasini YouTube'dan olish" style="padding:9px 11px;background:transparent;border:1px solid var(--border2);color:var(--text2);border-radius:8px;font-size:13px;cursor:pointer">📊</button>
       <button onclick="openIdeaGenModal()" style="padding:9px 14px;background:rgba(255,68,102,0.12);border:1px solid rgba(255,68,102,0.4);color:#ff4466;border-radius:8px;font-family:'Unbounded',sans-serif;font-size:10px;font-weight:700;cursor:pointer">✨ G'OYALAR OLISH</button>
       <button onclick="openChannelModal()" style="padding:9px 14px;background:var(--green);color:#000;border:none;border-radius:8px;font-family:'Unbounded',sans-serif;font-size:10px;font-weight:700;cursor:pointer">+ YANGI KANAL</button>
     </div>
@@ -7785,7 +7937,7 @@ function fbGetData(){
     customHabits: customHabits,
     incomeData: incomeData,
     myGoals: myGoals,
-    ytChannels: channels,
+    ytChannels: channels.map(function(ch){var c=Object.assign({},ch);delete c.ytApiKey;return c;}),
     pomoHistory: pomoHistory,
     sleepData: sleepData,
     weeklyData: weeklyData,
@@ -7856,7 +8008,13 @@ function fbApplyData(data){
   if(data.customHabits) { customHabits = data.customHabits; localStorage.setItem("customHabits", JSON.stringify(customHabits)); }
   if(data.incomeData)   { incomeData = data.incomeData; localStorage.setItem("incomeData", JSON.stringify(incomeData)); }
   if(data.myGoals)      { myGoals = data.myGoals; localStorage.setItem("myGoals", JSON.stringify(myGoals)); }
-  if(data.ytChannels)   { channels = data.ytChannels; localStorage.setItem("ytChannels", JSON.stringify(channels)); }
+  if(data.ytChannels)   {
+    var localKeys={};
+    channels.forEach(function(c){if(c.ytApiKey)localKeys[c.id]=c.ytApiKey;});
+    channels = data.ytChannels;
+    channels.forEach(function(c){if(!c.ytApiKey&&localKeys[c.id])c.ytApiKey=localKeys[c.id];});
+    localStorage.setItem("ytChannels", JSON.stringify(channels));
+  }
   if(data.pomoHistory)  { pomoHistory = data.pomoHistory; localStorage.setItem("pomoHistory", JSON.stringify(pomoHistory)); }
   if(data.sleepData)    { sleepData = data.sleepData; localStorage.setItem("sleepData", JSON.stringify(sleepData)); }
   if(data.weeklyData)   { weeklyData = data.weeklyData; localStorage.setItem("weeklyData", JSON.stringify(weeklyData)); }
