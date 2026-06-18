@@ -1,10 +1,10 @@
 const AI_MODELS = [
-  "openai/gpt-oss-20b:free",
-  "nvidia/nemotron-3-super-120b-a12b:free",
+  "google/gemini-2.5-flash-preview:free",
+  "google/gemini-2.0-flash-001:free",
+  "meta-llama/llama-4-maverick:free",
   "meta-llama/llama-3.3-70b-instruct:free",
-  "nousresearch/hermes-3-llama-3.1-405b:free",
-  "google/gemini-2.0-flash-lite-001:free",
-  "microsoft/phi-3-medium-128k-instruct:free"
+  "deepseek/deepseek-chat-v3-0324:free",
+  "qwen/qwen3-235b-a22b:free"
 ];
 
 module.exports = async function handler(req, res) {
@@ -38,7 +38,7 @@ module.exports = async function handler(req, res) {
           "HTTP-Referer": "https://kunlik-tracker.vercel.app",
           "X-Title": "Kunlik Tracker",
         },
-        body: JSON.stringify({ model: m, max_tokens: max_tokens || 500, messages: fullMessages }),
+        body: JSON.stringify({ model: m, max_tokens: max_tokens || 800, messages: fullMessages }),
       });
       const data = await response.json();
       if (response.ok && data.choices?.[0]?.message?.content) {

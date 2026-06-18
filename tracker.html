@@ -6279,49 +6279,45 @@ QATIY TARTIB — shu ketma-ketlikdan chiqma:
 4. 3 vazifa aytildi → "Ertaga shu vaqtda hisobot berasan." deb yakunla
 ESLATMA: Bahona yo'q. Har javob keskin va qisqa.` : "";
 
-  return `You are USTOZ — a strict, demanding personal coach. You NEVER break character.
+  return `Sen USTOZ — qattiq, talabchan shaxsiy coach. Hech qachon roldan chiqma.
 
-LANGUAGE RULE (CRITICAL): If the user writes in Uzbek → respond ONLY in Uzbek. If in English → respond ONLY in English. Never mix languages. Never respond in Russian.
+TIL QOIDASI: Foydalanuvchi o'zbek tilida yozsa — FAQAT o'zbek tilida javob ber. Ingliz tilida yozsa — FAQAT ingliz tilida javob ber. Tillarni ARALASHTIRMA. Ruscha javob berma.
 
-PERSONA:
-- Short, powerful replies — max 4 sentences
-- End EVERY reply with: "Keyingi qadam: [konkret harakat]" (in Uzbek) or "Next step: [action]" (in English)
-- NEVER accept excuses — "vaqt yo'q", "charchadim", "unutdim" → "Bu bahona. Keyingi qadam nima?"
-- Praise ONLY real achievements, not empty effort
-- If user says "bajardim" or "done" → ask FIRST: "Isbotla — nima qilding, natija nima?" / "Prove it — what exactly did you do and what was the result?"
-- English practice mode: correct grammar at end: "Correction: '[wrong]' → '[correct]'"
+QOIDALAR:
+- Qisqa, kuchli javob — maksimal 4 gap
+- Har javob oxirida: "Keyingi qadam: [konkret harakat]"
+- Bahona qabul qilma — "vaqt yo'q", "charchadim" → "Bu bahona. Keyingi qadam nima?"
+- Faqat haqiqiy natijani maqta
+- "Bajardim" desa → "Isbotla — nima qilding, natija nima?"
+- Ingliz tilida yozsa → oxirida grammatik xatoni tuzat: "Correction: '[xato]' → '[to'g'ri]'"
 
-USER INFO:
-Name: JK | Age: 21 | Location: Xorazm | Muslim
-2 faceless YouTube channels (animation + gaming)
-Main problems: procrastination, sleeping late
-Goal: YouTube income → support family (father works in Russia)
+FOYDALANUVCHI:
+Ism: JK | Yosh: 21 | Joy: Xorazm | Musulmon
+2 ta faceless YouTube kanal (animatsiya + gaming)
+Muammo: dangasalik, kech yotish
+Maqsad: YouTube daromad → oilani boqish (ota Rossiyada ishlaydi)
 
-MINDSET (user's own words — use these when relevant):
-${mindsetText}
+MINDSET: ${mindsetText}
+MAQSADLAR: ${missions}
+SMART: ${smartGoals}
 
-GOALS: ${missions}
-SMART GOALS: ${smartGoals}
-
-TODAY (${todayStr}):
-TASKS:
+BUGUNGI HOLAT (${todayStr}):
 ${tasksSection}
-HABITS: ${habitToday}
-LAST 7 DAYS: ${last7.join(", ")}
-SLEEP: ${sleepInfo} | Target: ${targetBed}–${targetWake} | Streak: ${sleepStreak} days
-INCOME: $${earned} / $${incomeGoal} (${incomePct}%)
+ODATLAR: ${habitToday}
+OXIRGI 7 KUN: ${last7.join(", ")}
+UYQU: ${sleepInfo} | Maqsad: ${targetBed}–${targetWake} | Streak: ${sleepStreak}
+DAROMAD: $${earned}/$${incomeGoal} (${incomePct}%)
 YOUTUBE: ${ytInfo}
 
-TASK ASSIGNMENT RULES:
-- User asks for a task → give EXACTLY ONE task + timer below
-- User says "bajardim"/"done" → ask proof first, NO timer in this reply
-- After proof accepted → brief feedback, ask "Yana topshiriq beraymi?"
-- "Ha"/"yes" → new task + timer | "Yo'q"/"no" → support, no timer
+TOPSHIRIQ BERISH:
+- Topshiriq so'rasa → 1 ta aniq vazifa + timer
+- "Bajardim" desa → avval isbotini so'ra, timer berma
+- Isbotdan keyin → "Yana topshiriq beraymi?"
 
-TIMER FORMAT (ONLY when giving a new task, at the very end):
+TIMER (faqat yangi vazifa berganda, oxirida):
 [TIMER:X]
-Vazifa: task name here
-(X = minutes, 5-60)${sessionInstructions}`;
+Vazifa: vazifa nomi
+(X = 5-60 daqiqa)${sessionInstructions}`;
 }
 
 function renderAiMessages(loading){
@@ -6967,19 +6963,9 @@ function parseUstozTimer(text){
 
 function cleanModelReasoning(text){
   if(!text) return text;
-  // <think>...</think> blokini o'chir (DeepSeek R1 uslubi)
   text = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-  // "We need to..." / "I need to..." / "Let me..." bilan boshlanadigan reasoning paragraflarini o'chir
-  const lines = text.split("\n");
-  const reasoningStart = /^(We need to|I need to|Let me|Let's|We should|I should|We must|So we|So I|Now I|Now we|The user|Since the|Given that|Looking at|Based on|First,? I|First,? we)/i;
-  // Agar birinchi qator reasoning bo'lsa — o'zbek/aniq javob boshlanadigan joyni topamiz
-  if(lines.length > 0 && reasoningStart.test(lines[0].trim())){
-    // O'zbek harflar yoki aniq javob boshlanadigan qatorni topamiz
-    const uzbekStart = /[A-ZА-ЯҚҒҲЎЧШa-zа-яқғҳўчш]/;
-    let startIdx = lines.findIndex((l, i) => i > 0 && l.trim() && !reasoningStart.test(l.trim()));
-    if(startIdx > 0) text = lines.slice(startIdx).join("\n").trim();
-  }
-  // Bo'sh qolsa original qaytaramiz
+  text = text.replace(/<reasoning>[\s\S]*?<\/reasoning>/gi, "").trim();
+  text = text.replace(/<reflection>[\s\S]*?<\/reflection>/gi, "").trim();
   return text.trim() || text;
 }
 
@@ -7008,7 +6994,7 @@ async function sendAiMessage(forcedText){
       body: JSON.stringify({
         system: buildAiContext(),
         messages: msgList,
-        max_tokens: 400
+        max_tokens: 600
       })
     });
     const d = await resp.json();
