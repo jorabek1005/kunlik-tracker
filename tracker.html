@@ -1951,6 +1951,7 @@ const BASE_HABITS=[
 let whyQuote = localStorage.getItem("whyQuote") || DEFAULT_QUOTE;
 let goals = JSON.parse(localStorage.getItem("goals") || JSON.stringify(DEFAULT_GOALS));
 let customHabits = JSON.parse(localStorage.getItem("customHabits") || "[]");
+let hiddenHabits = JSON.parse(localStorage.getItem("hiddenHabits") || "[]");
 let state = JSON.parse(localStorage.getItem("trackerState") || "{}");
 let incomeData = JSON.parse(localStorage.getItem("incomeData") || '{"goal":2000,"entries":[]}');
 let today = new Date().toISOString().split("T")[0];
@@ -2305,7 +2306,7 @@ function renderPomo(){
 }
 
 // HELPERS
-function getHABITS(){return[...BASE_HABITS,...customHabits];}
+function getHABITS(){return[...BASE_HABITS,...customHabits].filter(h=>hiddenHabits.indexOf(h.id)===-1);}
 function fmtTime(secs){
   const m=Math.floor(secs/60),s=secs%60;
   return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
@@ -3115,12 +3116,19 @@ function addCustomHabit(){
   renderHabits();
 }
 function deleteCustomHabit(id){
+  if(!confirm("Bu odatni o'chirishni xohlaysizmi?")) return;
   playSound("delete");
-  customHabits=customHabits.filter(h=>h.id!==id);
-  localStorage.setItem("customHabits",JSON.stringify(customHabits));
+  var isBase = BASE_HABITS.some(function(h){return h.id===id;});
+  if(isBase){
+    if(hiddenHabits.indexOf(id)===-1) hiddenHabits.push(id);
+    localStorage.setItem("hiddenHabits",JSON.stringify(hiddenHabits));
+  } else {
+    customHabits=customHabits.filter(h=>h.id!==id);
+    localStorage.setItem("customHabits",JSON.stringify(customHabits));
+  }
   Object.keys(state).forEach(k=>{if(state[k].habits)delete state[k].habits[id];});
   localStorage.setItem("trackerState",JSON.stringify(state));
-  fbMarkDirty(["trackerState","customHabits"]);
+  fbMarkDirty(["trackerState","customHabits","hiddenHabits"]);
   fbSchedule();
   renderHabits();
   renderHabitStreaks();
@@ -8031,6 +8039,7 @@ function fbGetData(){
     trackerState: state,
     goals: goals,
     customHabits: customHabits,
+    hiddenHabits: hiddenHabits,
     incomeData: incomeData,
     myGoals: myGoals,
     ytChannels: channels,
@@ -8103,6 +8112,7 @@ function fbApplyData(data){
   if(data.trackerState) { state = data.trackerState; localStorage.setItem("trackerState", JSON.stringify(state)); }
   if(data.goals)        { goals = data.goals; localStorage.setItem("goals", JSON.stringify(goals)); }
   if(data.customHabits) { customHabits = data.customHabits; localStorage.setItem("customHabits", JSON.stringify(customHabits)); }
+  if(data.hiddenHabits) { hiddenHabits = data.hiddenHabits; localStorage.setItem("hiddenHabits", JSON.stringify(hiddenHabits)); }
   if(data.incomeData)   { incomeData = data.incomeData; localStorage.setItem("incomeData", JSON.stringify(incomeData)); }
   if(data.myGoals)      { myGoals = data.myGoals; localStorage.setItem("myGoals", JSON.stringify(myGoals)); }
   if(data.ytChannels)   { channels = data.ytChannels; localStorage.setItem("ytChannels", JSON.stringify(channels)); }
@@ -8128,6 +8138,7 @@ function fbApplyData(data){
   if(!Array.isArray(tasks)) tasks = [];
   if(!Array.isArray(goals)) goals = [];
   if(!Array.isArray(customHabits)) customHabits = [];
+  if(!Array.isArray(hiddenHabits)) hiddenHabits = [];
   if(!incomeData || typeof incomeData !== "object") incomeData = {goal:2000, entries:[]};
   if(!Array.isArray(incomeData.entries)) incomeData.entries = [];
   if(!Array.isArray(myGoals)) myGoals = [];
