@@ -1,10 +1,10 @@
 const AI_MODELS = [
-  "google/gemini-2.5-flash-preview:free",
-  "google/gemini-2.0-flash-001:free",
-  "meta-llama/llama-4-maverick:free",
-  "meta-llama/llama-3.3-70b-instruct:free",
-  "deepseek/deepseek-chat-v3-0324:free",
-  "qwen/qwen3-235b-a22b:free"
+  "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "nex-agi/nex-n2-pro:free",
+  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+  "openrouter/owl-alpha",
+  "poolside/laguna-m.1:free",
+  "cohere/north-mini-code:free"
 ];
 
 module.exports = async function handler(req, res) {

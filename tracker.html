@@ -2195,8 +2195,8 @@ function pomoStart(){
 
 function openPomoTaskPicker(){
   const todayStr = getTodayStr();
-  const available = tasks.filter(t=>!t.done&&(!t.due||t.due<=todayStr))
-    .sort((a,b)=>a.priority==="high"?-1:b.priority==="high"?1:0).slice(0,10);
+  const available = tasks.filter(t=>!t.done && t.due === todayStr)
+    .sort((a,b)=>a.priority==="high"?-1:b.priority==="high"?1:0);
   const prLabel = {high:"🔴",med:"🟡",low:"🟢"};
   const itemsHtml = available.length
     ? available.map(t=>`
