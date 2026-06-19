@@ -2,10 +2,12 @@
 // google/gemma-4-31b-it:free — tasdiqlangan, toza o'zbek tilida javob beradi
 const AI_MODELS = [
   "google/gemma-4-31b-it:free",
+  "nex-agi/nex-n2-pro:free",
+  "openai/gpt-oss-120b:free",
+  "openrouter/free",
   "google/gemma-4-26b-a4b-it:free",
   "qwen/qwen3-next-80b-a3b-instruct:free",
-  "meta-llama/llama-3.3-70b-instruct:free",
-  "nousresearch/hermes-3-llama-3.1-405b:free"
+  "meta-llama/llama-3.3-70b-instruct:free"
 ];
 
 // <think> kabi teglar bilan o'ralgan fikrlashni olib tashlaydi
