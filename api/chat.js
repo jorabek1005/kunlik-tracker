@@ -1,11 +1,40 @@
+// Faqat suhbatga mos, fikrlashni "dump" qilmaydigan modellar (reasoning model EMAS)
 const AI_MODELS = [
   "google/gemini-2.0-flash-lite-001:free",
   "meta-llama/llama-3.3-70b-instruct:free",
-  "nvidia/nemotron-3-super-120b-a12b:free",
   "nousresearch/hermes-3-llama-3.1-405b:free",
+  "meta-llama/llama-3.1-70b-instruct:free",
   "microsoft/phi-3-medium-128k-instruct:free",
-  "openai/gpt-oss-20b:free"
+  "mistralai/mistral-7b-instruct:free"
 ];
+
+// <think> kabi teglar bilan o'ralgan fikrlashni olib tashlaydi
+function stripReasoning(text) {
+  if (!text) return "";
+  return text
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .replace(/<reasoning>[\s\S]*?<\/reasoning>/gi, "")
+    .replace(/<reflection>[\s\S]*?<\/reflection>/gi, "")
+    .replace(/<\|.*?\|>/g, "")
+    .trim();
+}
+
+// Javob — fikrlash "dump"imi yoki haqiqiy javobmi? (model o'z fikrini matn sifatida chiqarsa)
+function looksLikeReasoning(text) {
+  if (!text || text.trim().length < 2) return true;
+  const t = text.toLowerCase();
+  const flags = [
+    "let's tackle", "step by step", "the user", "i need to follow",
+    "according to the rules", "according to the protocol", "looking at their",
+    "the system message", "the system prompt", "first, i ", "first, we ",
+    "let me ", "i should ", "we should ", "their main goal", "wait,",
+    "let's check", "but let's", "let's see", "okay, let", "alright, let",
+    "big frog (the", "their pending", "per youtube", "their current status"
+  ];
+  let hits = 0;
+  for (const f of flags) { if (t.includes(f)) hits++; }
+  return hits >= 2;
+}
 
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -38,11 +67,25 @@ module.exports = async function handler(req, res) {
           "HTTP-Referer": "https://kunlik-tracker.vercel.app",
           "X-Title": "Kunlik Tracker",
         },
-        body: JSON.stringify({ model: m, max_tokens: max_tokens || 800, messages: fullMessages }),
+        body: JSON.stringify({
+          model: m,
+          max_tokens: max_tokens || 800,
+          temperature: 0.6,
+          // OpenRouter: fikrlash tokenlarini javobga qo'shma
+          reasoning: { exclude: true },
+          messages: fullMessages,
+        }),
       });
       const data = await response.json();
-      if (response.ok && data.choices?.[0]?.message?.content) {
-        return res.status(200).json({ text: data.choices[0].message.content, model: m });
+      const raw = data.choices?.[0]?.message?.content;
+      if (response.ok && raw) {
+        const clean = stripReasoning(raw);
+        // Agar javob fikrlash "dump"i bo'lsa — keyingi modelga o't
+        if (looksLikeReasoning(clean)) {
+          errors.push(m + ": reasoning-dump (skip)");
+          continue;
+        }
+        return res.status(200).json({ text: clean, model: m });
       }
       errors.push(m + ": " + (data.error?.message || response.status));
     } catch (e) {
