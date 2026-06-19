@@ -5,8 +5,7 @@ const AI_MODELS = [
   "google/gemma-4-26b-a4b-it:free",
   "qwen/qwen3-next-80b-a3b-instruct:free",
   "meta-llama/llama-3.3-70b-instruct:free",
-  "nousresearch/hermes-3-llama-3.1-405b:free",
-  "cognitivecomputations/dolphin-mistral-24b-venice-edition:free"
+  "nousresearch/hermes-3-llama-3.1-405b:free"
 ];
 
 // <think> kabi teglar bilan o'ralgan fikrlashni olib tashlaydi
@@ -35,6 +34,26 @@ function looksLikeReasoning(text) {
   let hits = 0;
   for (const f of flags) { if (t.includes(f)) hits++; }
   return hits >= 2;
+}
+
+// Javob "axlat"mi? (bir xil so'z/ibora takrorlanib ketsa — buzuq model)
+function looksLikeGarbage(text) {
+  if (!text || text.trim().length < 2) return true;
+  const words = text.toLowerCase().replace(/[^\p{L}\s]/gu, " ").split(/\s+/).filter(Boolean);
+  if (words.length > 18) {
+    const freq = {};
+    let max = 0;
+    for (const w of words) { if (w.length > 3) { freq[w] = (freq[w] || 0) + 1; if (freq[w] > max) max = freq[w]; } }
+    if (max / words.length > 0.15) return true; // bitta so'z 15%+ takrorlansa
+  }
+  // 3 so'zli ketma-ketlik 3+ marta takrorlansa — axlat
+  const seqs = {};
+  for (let i = 0; i + 3 <= words.length; i++) {
+    const s = words.slice(i, i + 3).join(" ");
+    seqs[s] = (seqs[s] || 0) + 1;
+    if (seqs[s] >= 3) return true;
+  }
+  return false;
 }
 
 module.exports = async function handler(req, res) {
@@ -79,9 +98,13 @@ module.exports = async function handler(req, res) {
       const raw = data.choices?.[0]?.message?.content;
       if (response.ok && raw) {
         const clean = stripReasoning(raw);
-        // Agar javob fikrlash "dump"i bo'lsa — keyingi modelga o't
+        // Agar javob fikrlash "dump"i yoki axlat bo'lsa — keyingi modelga o't
         if (looksLikeReasoning(clean)) {
           errors.push(m + ": reasoning-dump (skip)");
+          continue;
+        }
+        if (looksLikeGarbage(clean)) {
+          errors.push(m + ": garbage (skip)");
           continue;
         }
         return res.status(200).json({ text: clean, model: m });
