@@ -1,11 +1,12 @@
 // Faqat suhbatga mos, fikrlashni "dump" qilmaydigan modellar (reasoning model EMAS)
+// google/gemma-4-31b-it:free — tasdiqlangan, toza o'zbek tilida javob beradi
 const AI_MODELS = [
-  "google/gemini-2.0-flash-lite-001:free",
+  "google/gemma-4-31b-it:free",
+  "google/gemma-4-26b-a4b-it:free",
+  "qwen/qwen3-next-80b-a3b-instruct:free",
   "meta-llama/llama-3.3-70b-instruct:free",
   "nousresearch/hermes-3-llama-3.1-405b:free",
-  "meta-llama/llama-3.1-70b-instruct:free",
-  "microsoft/phi-3-medium-128k-instruct:free",
-  "mistralai/mistral-7b-instruct:free"
+  "cognitivecomputations/dolphin-mistral-24b-venice-edition:free"
 ];
 
 // <think> kabi teglar bilan o'ralgan fikrlashni olib tashlaydi
@@ -71,8 +72,6 @@ module.exports = async function handler(req, res) {
           model: m,
           max_tokens: max_tokens || 800,
           temperature: 0.6,
-          // OpenRouter: fikrlash tokenlarini javobga qo'shma
-          reasoning: { exclude: true },
           messages: fullMessages,
         }),
       });
