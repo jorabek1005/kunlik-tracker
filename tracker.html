@@ -1361,6 +1361,16 @@
     </select>
     <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Kuniga nechta video yuklash kerak:</div>
     <input class="modal-input" id="chDailyTarget" type="number" min="0" max="20" placeholder="masalan: 1" value="1">
+    <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Qaysi kunlari video joylash kerak <span style="color:var(--text2)">(hammasi tanlangan = har kuni)</span>:</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="chDayBtns">
+      <button type="button" onclick="toggleChannelDay(1)" id="chday1" class="recur-day-btn">Du</button>
+      <button type="button" onclick="toggleChannelDay(2)" id="chday2" class="recur-day-btn">Se</button>
+      <button type="button" onclick="toggleChannelDay(3)" id="chday3" class="recur-day-btn">Chor</button>
+      <button type="button" onclick="toggleChannelDay(4)" id="chday4" class="recur-day-btn">Pay</button>
+      <button type="button" onclick="toggleChannelDay(5)" id="chday5" class="recur-day-btn">Juma</button>
+      <button type="button" onclick="toggleChannelDay(6)" id="chday6" class="recur-day-btn">Shan</button>
+      <button type="button" onclick="toggleChannelDay(0)" id="chday0" class="recur-day-btn">Yak</button>
+    </div>
     <div style="font-size:11px;color:var(--muted);margin-bottom:6px">1 video uchun o'rtacha necha daqiqa ketadi:</div>
     <input class="modal-input" id="chAvgMinutes" type="number" min="1" placeholder="15" value="15">
     <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Obunachi maqsadi (monetizatsiya uchun):</div>
@@ -3273,6 +3283,23 @@ function toggleRecurDay(day){
   if(!btn)return;
   btn.classList.toggle("active");
 }
+// ── Kanal video kunlari (haftaning kunlari) ──
+function toggleChannelDay(day){
+  const btn=document.getElementById("chday"+day);
+  if(btn) btn.classList.toggle("active");
+}
+function getSelectedChannelDays(){
+  return [0,1,2,3,4,5,6].filter(function(d){
+    const b=document.getElementById("chday"+d);
+    return b&&b.classList.contains("active");
+  });
+}
+function setSelectedChannelDays(days){
+  [0,1,2,3,4,5,6].forEach(function(d){
+    const b=document.getElementById("chday"+d);
+    if(b) b.classList.toggle("active", Array.isArray(days)&&days.includes(d));
+  });
+}
 function computeRecurDue(recurType,days){
   if(recurType!=="custom"||!days||days.length===0)return"";
   var d=new Date();
@@ -4370,6 +4397,7 @@ function openChannelModal(id){
     document.getElementById("chHandle").value=ch.handle||"";
     document.getElementById("chNiche").value=ch.niche||"boshqa";
     document.getElementById("chDailyTarget").value=ch.dailyQuota!=null?ch.dailyQuota:(ch.dailyTarget!=null?ch.dailyTarget:1);
+    setSelectedChannelDays((ch.videoDays&&ch.videoDays.length)?ch.videoDays:[0,1,2,3,4,5,6]);
     document.getElementById("chAvgMinutes").value=ch.averageMinutesPerVideo!=null?ch.averageMinutesPerVideo:15;
     document.getElementById("chSubGoal").value=ch.subGoal!=null?ch.subGoal:1000;
     document.getElementById("chWatchGoal").value=ch.watchHoursGoal!=null?ch.watchHoursGoal:4000;
@@ -4384,6 +4412,7 @@ function openChannelModal(id){
     document.getElementById("chHandle").value="";
     document.getElementById("chNiche").value="boshqa";
     document.getElementById("chDailyTarget").value=1;
+    setSelectedChannelDays([0,1,2,3,4,5,6]);
     document.getElementById("chAvgMinutes").value=15;
     document.getElementById("chSubGoal").value=1000;
     document.getElementById("chWatchGoal").value=4000;
@@ -4400,6 +4429,9 @@ function saveChannel(){
   const name=document.getElementById("chName").value.trim();
   if(!name)return;
   const quota=parseInt(document.getElementById("chDailyTarget").value)||0;
+  // Video kunlari: hammasi yoki hech narsa tanlanmasa — har kuni (bo'sh massiv)
+  let videoDays=getSelectedChannelDays();
+  if(videoDays.length===0||videoDays.length===7) videoDays=[];
   const ch={
     id:editingChannelId||("ch"+Date.now()),
     name,
@@ -4407,6 +4439,7 @@ function saveChannel(){
     niche:document.getElementById("chNiche").value,
     dailyQuota:quota,
     dailyTarget:quota,
+    videoDays:videoDays,
     averageMinutesPerVideo:parseInt(document.getElementById("chAvgMinutes").value)||15,
     subGoal:parseInt(document.getElementById("chSubGoal").value)||1000,
     watchHoursGoal:parseInt(document.getElementById("chWatchGoal").value)||4000,
@@ -4832,13 +4865,17 @@ function saveAllYtIdeas(){
 
 function generateYoutubeTasks(){
   const todayStr=getTodayStr();
+  const todayDow=new Date().getDay();
   let added=false;
   const stepLabels={script:"Ssenariy yoz",record:"Yozib ol",edit:"Edit qil",upload:"Yukla"};
   const steps=["script","record","edit","upload"];
   channels.forEach(function(ch){
     if(ch.status==="paused") return;
     const target=ch.dailyQuota!=null?ch.dailyQuota:(ch.dailyTarget||0);
-    if(target<=0) return;
+    // Video kun filtri: videoDays bo'sh/yo'q bo'lsa — har kuni, aks holda faqat tanlangan kunlarda
+    const vdays=ch.videoDays;
+    const videoDayOk=!Array.isArray(vdays)||vdays.length===0||vdays.indexOf(todayDow)>=0;
+    if(target>0&&videoDayOk){
 
     if(ch.workflowType==="multi-step"){
       for(let vi=1;vi<=target;vi++){
@@ -4889,6 +4926,7 @@ function generateYoutubeTasks(){
         added=true;
       }
     }
+    } // videoDayOk
     // ── Jonli efir — faqat BITTA topshiriq ──
     const liveTarget=ch.dailyLiveStreams||0;
     if(liveTarget>0){
@@ -5126,6 +5164,12 @@ function renderYt2Card(ch){
   const pulseClass=_ytPulseId===ch.id?" pulse":"";
   if(_ytPulseId===ch.id) _ytPulseId=null;
   const subPct=ch.subGoal>0?Math.min(100,Math.round((ch.subCount||0)/ch.subGoal*100)):0;
+  const vdayLabel=(function(){
+    const vd=ch.videoDays;
+    if(!Array.isArray(vd)||vd.length===0||vd.length===7) return "/kun";
+    const names=["Yak","Du","Se","Chor","Pay","Ju","Sha"];
+    return " ("+vd.slice().sort(function(a,b){return a-b;}).map(function(d){return names[d];}).join(", ")+")";
+  })();
 
   return`<div class="yt2-card status-${status}${pulseClass}">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
@@ -5134,7 +5178,7 @@ function renderYt2Card(ch){
           <span style="font-size:16px">${nicheIcon}</span>
           <div style="font-weight:600;font-size:14px;color:var(--text)">${ch.name}</div>
         </div>
-        <div style="font-size:10px;color:var(--muted);margin-top:3px">${nicheLabel}${quota>0?" · "+quota+" video/kun":""}${(ch.dailyLiveStreams||0)>0?" · "+ch.dailyLiveStreams+" efir/kun":""}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px">${nicheLabel}${quota>0?" · "+quota+" video"+vdayLabel:""}${(ch.dailyLiveStreams||0)>0?" · "+ch.dailyLiveStreams+" efir/kun":""}</div>
       </div>
       <span class="yt2-badge status-${status}">${statusLabel}</span>
     </div>
