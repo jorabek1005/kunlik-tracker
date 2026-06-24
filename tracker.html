@@ -1158,6 +1158,7 @@
   </div>
   <div class="drawer-section">
     <div class="drawer-section-title">Asosiy</div>
+    <button class="drawer-item" onclick="goPage('home');closeDrawer()"><div class="drawer-item-icon">🏠</div>Bugun</button>
     <button class="drawer-item" onclick="goPage('tasks');closeDrawer()"><div class="drawer-item-icon">📋</div>Tasks</button>
     <button class="drawer-item" onclick="goPage('today');closeDrawer()"><div class="drawer-item-icon">✅</div>Habits</button>
     <button class="drawer-item" onclick="goPage('youtube');closeDrawer()"><div class="drawer-item-icon">📺</div>YouTube</button>
@@ -1213,14 +1214,19 @@
 
 <!-- BOTTOM NAV -->
 <div class="bottom-nav" style="justify-content:space-around">
+  <button class="bnav-btn" id="bnav-home" onclick="goPage('home')"><span>🏠</span>Bugun</button>
   <button class="bnav-btn" id="bnav-tasks" onclick="goPage('tasks')"><span>📋</span>Tasks</button>
-  <button class="bnav-btn" id="bnav-today" onclick="goPage('today')"><span>✅</span>Habits</button>
   <button class="bnav-btn" id="bnav-youtube" onclick="goPage('youtube')"><span>📺</span>YouTube</button>
   <button class="bnav-btn" id="bnav-namoz" onclick="goPage('namoz')"><span>🕌</span>Prayer</button>
   <button class="bnav-btn" id="bnav-more" onclick="toggleDrawer()"><span>☰</span>More</button>
 </div>
 
 <!-- PAGES -->
+
+<!-- HOME / BUGUN -->
+<div class="page" id="page-home">
+  <div id="homeContent"></div>
+</div>
 
 <!-- TASKS -->
 <div class="page" id="page-tasks">
@@ -7068,9 +7074,52 @@ async function sendAiMessage(forcedText){
   renderAiMessages(false);
 }
 
+function renderHome(){
+  const el=document.getElementById("homeContent"); if(!el) return;
+  const todayStr=getTodayStr();
+  if(!state[todayStr]) state[todayStr]={habits:{},note:""};
+  if(!state[todayStr].habits) state[todayStr].habits={};
+
+  // Odatlar
+  const habitsHtml=getHABITS().map(function(h){
+    const val=state[todayStr].habits[h.id];
+    const cls="habit"+(val===true?" done":val===false?" fail":"");
+    return '<div class="'+cls+'"><div class="h-left"><div class="h-icon">'+h.icon+'</div><div><div class="h-name">'+h.name+'</div><div class="h-desc">'+h.desc+'</div></div></div><div class="h-btns"><button class="btn-y" onclick="setHabit(\''+h.id+'\',true);renderHome()">✓</button><button class="btn-n" onclick="setHabit(\''+h.id+'\',false);renderHome()">✗</button></div></div>';
+  }).join("");
+
+  // Bugungi vazifalar (faqat bugun, bajarilmagan, maks 3)
+  const todayTasks=tasks.filter(function(t){return !t.done&&t.due===todayStr;})
+    .sort(function(a,b){return a.priority==="high"?-1:b.priority==="high"?1:0;})
+    .slice(0,3);
+  const prIcon={high:"🔴",med:"🟡",low:"🟢"};
+  const tasksHtml=todayTasks.length>0
+    ? todayTasks.map(function(t){
+        return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card2);border:1px solid var(--border2);border-radius:var(--r-sm);margin-bottom:6px;cursor:pointer" onclick="goPage(\'tasks\')"><span>'+(prIcon[t.priority]||"")+'</span><span style="font-size:13px;font-weight:600;flex:1;color:var(--text)">'+t.name+'</span>'+(t.taskTime?'<span style="font-size:11px;color:var(--muted)">'+t.taskTime+'</span>':'')+'</div>';
+      }).join("")
+    : '<div style="text-align:center;color:var(--muted);padding:16px;font-size:13px">Bugun vazifa yo\'q</div>';
+
+  // Statistika
+  const doneCount=tasks.filter(function(t){return t.done&&t.doneDate===todayStr;}).length;
+  const habDone=getHABITS().filter(function(h){return state[todayStr].habits[h.id]===true;}).length;
+  const habTotal=getHABITS().length;
+
+  el.innerHTML=
+    '<div style="padding:4px 0 12px">'+
+      '<div style="font-family:var(--font-display);font-size:20px;font-weight:800;color:var(--text);margin-bottom:4px">Bugun</div>'+
+      '<div style="font-size:12px;color:var(--muted)">'+fmtDate(todayStr)+' · '+doneCount+' vazifa bajarildi · '+habDone+'/'+habTotal+' odat</div>'+
+    '</div>'+
+    '<button onclick="goPage(\'timer\');setTimeout(openPomoTaskPicker,300)" style="width:100%;padding:14px;margin-bottom:16px;background:linear-gradient(135deg,var(--blue),#6366f1);color:#fff;border:none;border-radius:var(--r-lg);font-family:var(--font-display);font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px rgba(77,159,255,0.3)">🎬 Ishni boshlash</button>'+
+    '<div style="font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px">Vazifalar</div>'+
+    tasksHtml+
+    (todayTasks.length>0?'<div style="text-align:center;margin-top:4px"><button onclick="goPage(\'tasks\')" style="background:transparent;border:none;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer">Hammasini ko\'rish →</button></div>':'')+
+    '<div style="font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--text);margin:16px 0 8px">Odatlar</div>'+
+    habitsHtml;
+}
+
 // renderPage update
 function renderPage(page){
-  if(page==="today") renderToday();
+  if(page==="home") renderHome();
+  else if(page==="today") renderToday();
   else if(page==="goals") renderGoals();
   else if(page==="mygoals") renderMyGoals();
   else if(page==="stats") renderStats();
@@ -8441,7 +8490,7 @@ updateKarmaUI();
 migrateYoutubeSchema();
 checkYoutubeDailyReset();
 generateYoutubeTasks();
-goPage('mygoals');
+goPage('home');
 setTimeout(fbPull, 2000);
 fetchNamozTimes();
 
