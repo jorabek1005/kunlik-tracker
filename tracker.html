@@ -7144,16 +7144,24 @@ function renderHome(){
     return '<div class="'+cls+'"><div class="h-left"><div class="h-icon">'+h.icon+'</div><div><div class="h-name">'+h.name+'</div><div class="h-desc">'+h.desc+'</div></div></div><div class="h-btns"><button class="btn-y" onclick="setHabit(\''+h.id+'\',true);renderHome()">✓</button><button class="btn-n" onclick="setHabit(\''+h.id+'\',false);renderHome()">✗</button></div></div>';
   }).join("");
 
-  // Bugungi vazifalar (faqat bugun, bajarilmagan, maks 3)
-  const todayTasks=tasks.filter(function(t){return !t.done&&t.due===todayStr;})
-    .sort(function(a,b){return a.priority==="high"?-1:b.priority==="high"?1:0;})
-    .slice(0,3);
+  // Bugungi vazifalar: faqat MIT, Big Frog yoki HIGH priority
+  const frogId=localStorage.getItem("frogTaskId")||"";
+  const todayTasks=tasks.filter(function(t){return !t.done&&t.due===todayStr&&(t.priority==="high"||t.isMIT||t.isFrog||(frogId&&t.id===frogId));})
+    .sort(function(a,b){
+      var af=a.isFrog||(frogId&&a.id===frogId)?1:0, bf=b.isFrog||(frogId&&b.id===frogId)?1:0;
+      if(bf!==af) return bf-af;
+      if(a.isMIT!==b.isMIT) return a.isMIT?-1:1;
+      return 0;
+    });
   const prIcon={high:"🔴",med:"🟡",low:"🟢"};
   const tasksHtml=todayTasks.length>0
     ? todayTasks.map(function(t){
-        return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card2);border:1px solid var(--border2);border-radius:var(--r-sm);margin-bottom:6px;cursor:pointer" onclick="goPage(\'tasks\')"><span>'+(prIcon[t.priority]||"")+'</span><span style="font-size:13px;font-weight:600;flex:1;color:var(--text)">'+t.name+'</span>'+(t.taskTime?'<span style="font-size:11px;color:var(--muted)">'+t.taskTime+'</span>':'')+'</div>';
+        var isFr=t.isFrog||(frogId&&t.id===frogId);
+        var badge=isFr?'🐸 ':'';
+        badge+=t.isMIT?'<span style="font-size:9px;background:var(--red);color:#fff;padding:1px 5px;border-radius:4px;font-weight:700;margin-right:4px">MIT</span>':'';
+        return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card2);border:1px solid '+(isFr?'var(--yellow)':'var(--border2)')+';border-radius:var(--r-sm);margin-bottom:6px;cursor:pointer" onclick="goPage(\'tasks\')"><span>'+(prIcon[t.priority]||"")+'</span><span style="font-size:13px;font-weight:600;flex:1;color:var(--text)">'+badge+t.name+'</span>'+(t.taskTime?'<span style="font-size:11px;color:var(--muted)">'+t.taskTime+'</span>':'')+'</div>';
       }).join("")
-    : '<div style="text-align:center;color:var(--muted);padding:16px;font-size:13px">Bugun vazifa yo\'q</div>';
+    : '<div style="text-align:center;color:var(--muted);padding:16px;font-size:13px">Bugun muhim vazifa yo\'q</div>';
 
   // Statistika
   const doneCount=tasks.filter(function(t){return t.done&&t.doneDate===todayStr;}).length;
